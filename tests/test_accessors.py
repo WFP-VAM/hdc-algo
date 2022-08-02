@@ -2,15 +2,24 @@
 # pylint: disable=redefined-outer-name,unused-import,no-member,no-name-in-module,missing-function-docstring
 # pyright: reportGeneralTypeIssues=false
 
+import dask.array as da
 import numpy as np
 import pandas as pd
 import pytest
-from tests.conftest import to_da
 import xarray as xr
 
 from seasmon_xr import ops
 from seasmon_xr.accessors import MissingTimeError
 from seasmon_xr.ops.ws2d import ws2d
+
+
+def to_da(xx):
+    return xr.DataArray(
+        data=da.from_array(xx.data),
+        dims=xx.dims,
+        coords=xx.coords,
+        attrs=xx.attrs,
+    )
 
 
 @pytest.fixture
