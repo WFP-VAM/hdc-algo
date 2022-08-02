@@ -15,6 +15,7 @@ def data_dir() -> Path:
 def ts_ndvi(data_dir):
     yield (-3000, np.loadtxt(data_dir / "ts-ndvi.txt", dtype="int16"))
 
+
 @pytest.fixture(scope="session")
 def to_da(xx):
     return xr.DataArray(
