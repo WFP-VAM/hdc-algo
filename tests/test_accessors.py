@@ -5,6 +5,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from tests.conftest import to_da
 import xarray as xr
 
 from seasmon_xr import ops
@@ -161,6 +162,14 @@ def test_algo_autocorr(darr):
     darr_autocorr = darr.hdc.algo.autocorr()
     assert isinstance(darr_autocorr, xr.DataArray)
     np.testing.assert_almost_equal(darr_autocorr, _res)
+
+
+def test_algo_autocorr_da(darr):
+    darr_da = to_da(darr)
+    _ = darr_da.hdc.algo.autocorr()
+
+    darr_da_t = darr_da.transpose(..., "time")
+    _ = darr_da_t.hdc.algo.autocorr()
 
 
 def test_algo_spi(darr, res_spi):
