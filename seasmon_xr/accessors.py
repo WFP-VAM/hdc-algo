@@ -1,5 +1,6 @@
 """Xarray Accesor classes."""
 from typing import List, Optional, Union
+from warnings import warn
 
 from dask import is_dask_collection
 import dask.array as da
@@ -255,7 +256,7 @@ class WhittakerSmoother(AccessorBase):
         if sg is None and s is None:
             raise ValueError("Need S or sgrid")
 
-        lmda = 10**sg if sg is not None else s
+        lmda = 10 ** sg if sg is not None else s
 
         if p is not None:
 
@@ -492,6 +493,8 @@ class PixelAlgorithms(AccessorBase):
         """
         xx = self._obj
         nodata = xx.attrs.get("nodata", None)
+        if nodata is None:
+            warn("Calculating autocorr without nodata value defined!")
         if xx.dims[0] == "time":
             # I don't know how to tell xarray's map_blocks about
             # changing dtype and losing first dimension, so use
