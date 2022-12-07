@@ -1,13 +1,13 @@
 """Numba accelerated Whittaker functions."""
 # pyright: reportGeneralTypeIssues=false
-# pylint: disable=C0103,C0301,E0401,R0912,R0913,R0914,R0915
+# pylint: disable=C0103,C0301,E0401,R0912,R0913,R0914,R0915,too-many-lines
 from math import log, pow, sqrt  # pylint: disable=W0622
 from typing import Optional, Union
 
-import numpy
 import xarray
+import numpy as np
 from numba import guvectorize, njit
-from numba.core.types import float64, int16, int32, uint8
+from numba.core.types import float64, int16, int32, uint8, boolean
 
 
 @njit
@@ -16,15 +16,15 @@ def ws2d(y, lmda, w):
     Whittaker filter with differences of 2nd order.
 
     Args:
-        y (numpy.array): raw data array (1d, expected in float64)
+        y (np.array): raw data array (1d, expected in float64)
         lmda (double): S value
-        w (numpy.array): weights vector (1d, expected in float64)
+        w (np.array): weights vector (1d, expected in float64)
     Returns:
-        z (numpy.array): smoothed data array (1d)
+        z (np.array): smoothed data array (1d)
     """
     n = y.shape[0]
     m = n - 1
-    z = numpy.zeros(n)
+    z = np.zeros(n)
     d = z.copy()
     c = z.copy()
     e = z.copy()
@@ -76,7 +76,7 @@ def ws2dgu(y, lmda, nodata, out):
         Smoothed time-series array z
     """
     m = y.shape[0]
-    w = numpy.zeros(y.shape, dtype=float64)
+    w = np.zeros(y.shape, dtype=float64)
 
     n = 0
     for ii in range(m):
@@ -88,7 +88,7 @@ def ws2dgu(y, lmda, nodata, out):
 
     if n > 1:
         z = ws2d(y, lmda, w)
-        numpy.round_(z, 0, out)
+        np.round_(z, 0, out)
     else:
         out[:] = y[:]
 
@@ -110,51 +110,42 @@ def ws2dpgu(y, lmda, nodata, p, out):
     Returns:
         Smoothed time-series array z
     """
-    w = numpy.zeros(y.shape, dtype=float64)
-    m = y.shape[0]
-    n = 0
+    if lmda != 0.0:
 
-    for ii in range(m):
-        if y[ii] == nodata:
-            w[ii] = 0
+        m = y.shape[0]
+
+        # Compute weights for nodata values
+        w = 1 - np.array(
+            [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
+        )
+        n = np.sum(w)
+
+        if n > 1:
+            p1 = 1 - p
+            z = np.zeros(m)
+            znew = np.zeros(m)
+            wa = np.zeros(m)
+
+            # Calculate weights
+            for _ in range(10):
+                envelope = y > z
+                wa[envelope] = p
+                wa[~envelope] = p1
+                ww = w * wa
+
+                znew[:] = ws2d(y, lmda, ww)
+
+                z_tmp = np.sum(np.abs(znew - z))
+                if z_tmp == 0.0:
+                    break
+
+                z[:] = znew[:]
+
+            z = ws2d(y, lmda, ww)
+            np.round_(z, 0, out)
+
         else:
-            n += 1
-            w[ii] = 1
-
-    if n > 1:
-        p1 = 1 - p
-        z = numpy.zeros(m)
-        znew = numpy.zeros(m)
-        wa = numpy.zeros(m)
-        ww = numpy.zeros(m)
-
-        # Calculate weights
-
-        for _ in range(10):
-            for j in range(m):
-                y_tmp = y[j]
-                z_tmp = z[j]
-
-                if y_tmp > z_tmp:
-                    wa[j] = p
-                else:
-                    wa[j] = p1
-                ww[j] = w[j] * wa[j]
-
-            znew[:] = ws2d(y, lmda, ww)
-            z_tmp = 0.0
-            j = 0
-            for j in range(m):
-                z_tmp += abs(znew[j] - z[j])
-
-            if z_tmp == 0.0:
-                break
-
-            z[:] = znew[:]
-
-        z = ws2d(y, lmda, ww)
-        numpy.round_(z, 0, out)
-
+            out[:] = y[:]
     else:
         out[:] = y[:]
 
@@ -169,12 +160,12 @@ def ws2doptv(y, nodata, llas, out, lopt):
     Whittaker filter V-curve optimization of S.
 
     Args:
-        y (numpy.array): raw data array (1d, expected in float64)
+        y (np.array): raw data array (1d, expected in float64)
         nodata (double, int): nodata value
-        llas (numpy.array): 1d array of s values to use for optimization
+        llas (np.array): 1d array of s values to use for optimization
     """
     m = y.shape[0]
-    w = numpy.zeros(y.shape, dtype=float64)
+    w = np.zeros(y.shape, dtype=float64)
     n = 0
     for ii in range(m):
         if y[ii] == nodata:
@@ -190,12 +181,12 @@ def ws2doptv(y, nodata, llas, out, lopt):
         i = 0
         k = 0
 
-        fits = numpy.zeros(nl)
-        pens = numpy.zeros(nl)
-        z = numpy.zeros(m)
-        diff1 = numpy.zeros(m1)
-        lamids = numpy.zeros(nl1)
-        v = numpy.zeros(nl1)
+        fits = np.zeros(nl)
+        pens = np.zeros(nl)
+        z = np.zeros(m)
+        diff1 = np.zeros(m1)
+        lamids = np.zeros(nl1)
+        v = np.zeros(nl1)
 
         # Compute v-curve
         for lix in range(nl):
@@ -239,7 +230,7 @@ def ws2doptv(y, nodata, llas, out, lopt):
 
         lopt[0] = pow(10, lamids[k])
         z = ws2d(y, lopt[0], w)
-        numpy.round_(z, 0, out)
+        np.round_(z, 0, out)
     else:
         out[:] = y[:]
         lopt[0] = 0.0
@@ -255,13 +246,13 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
     Whittaker filter V-curve optimization of S and asymmetric weights.
 
     Args:
-        y (numpy.array): raw data array (1d, expected in float64)
+        y (np.array): raw data array (1d, expected in float64)
         nodata (double, int): nodata value
         p (float): Envelope value for asymmetric weights
-        llas (numpy.array): 1d array of s values to use for optimization
+        llas (np.array): 1d array of s values to use for optimization
     """
     m = y.shape[0]
-    w = numpy.zeros(y.shape, dtype=float64)
+    w = np.zeros(y.shape, dtype=float64)
 
     n = 0
     for ii in range(m):
@@ -280,15 +271,15 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
         j = 0
         p1 = 1 - p
 
-        fits = numpy.zeros(nl)
-        pens = numpy.zeros(nl)
-        z = numpy.zeros(m)
-        znew = numpy.zeros(m)
-        diff1 = numpy.zeros(m1)
-        lamids = numpy.zeros(nl1)
-        v = numpy.zeros(nl1)
-        wa = numpy.zeros(m)
-        ww = numpy.zeros(m)
+        fits = np.zeros(nl)
+        pens = np.zeros(nl)
+        z = np.zeros(m)
+        znew = np.zeros(m)
+        diff1 = np.zeros(m1)
+        lamids = np.zeros(nl1)
+        v = np.zeros(nl1)
+        wa = np.zeros(m)
+        ww = np.zeros(m)
 
         # Compute v-curve
         for lix in range(nl):
@@ -378,7 +369,7 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        numpy.round_(z, 0, out)
+        np.round_(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -392,19 +383,16 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
 )
 def ws2doptvplc(y, nodata, p, lc, out, lopt):
     """
-    Whittaker filter V-curve optimization.
-
-    Whittaker filter V-curve optimization of S, asymmetric weights and
-    srange determined by autocorrelation.
+    Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
 
     Args:
-        y (numpy.array): raw data array (1d, expected in float64)
+        y (np.array): raw data array (1d, expected in float64)
         nodata (double, int): nodata value
         p (float): Envelope value for asymmetric weights
         lc (float): lag1 autocorrelation
     """
     m = y.shape[0]
-    w = numpy.zeros(y.shape, dtype=float64)
+    w = np.zeros(y.shape, dtype=float64)
 
     n = 0
     for ii in range(m):
@@ -416,11 +404,11 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
 
     if n > 1:
         if lc > 0.5:
-            llas = numpy.arange(-2, 1.2, 0.2, dtype=float64)
+            llas = np.arange(-2, 1.2, 0.2, dtype=float64)
         elif lc <= 0.5:
-            llas = numpy.arange(0, 3.2, 0.2, dtype=float64)
+            llas = np.arange(0, 3.2, 0.2, dtype=float64)
         else:
-            llas = numpy.arange(-1, 1.2, 0.2, dtype=float64)
+            llas = np.arange(-1, 1.2, 0.2, dtype=float64)
 
         m1 = m - 1
         m2 = m - 2
@@ -431,15 +419,15 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
         j = 0
         p1 = 1 - p
 
-        fits = numpy.zeros(nl)
-        pens = numpy.zeros(nl)
-        z = numpy.zeros(m)
-        znew = numpy.zeros(m)
-        diff1 = numpy.zeros(m1)
-        lamids = numpy.zeros(nl1)
-        v = numpy.zeros(nl1)
-        wa = numpy.zeros(m)
-        ww = numpy.zeros(m)
+        fits = np.zeros(nl)
+        pens = np.zeros(nl)
+        z = np.zeros(m)
+        znew = np.zeros(m)
+        diff1 = np.zeros(m1)
+        lamids = np.zeros(nl1)
+        v = np.zeros(nl1)
+        wa = np.zeros(m)
+        ww = np.zeros(m)
 
         # Compute v-curve
         for lix in range(nl):
@@ -529,7 +517,252 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        numpy.round_(z, 0, out)
+        np.round_(z, 0, out)
+
+    else:
+        out[:] = y[:]
+        lopt[0] = 0.0
+
+
+@guvectorize(
+    [(float64[:], float64, float64[:], boolean, int16[:], float64[:])],
+    "(n),(),(m),() -> (n),()",
+    nopython=True,
+)
+def ws2dwcv(y, nodata, llas, robust, out, lopt):
+    """
+    Whittaker filter Generalized Cross Validation optimization of lambda.
+
+    Whittaker Cross Validation (WCV)
+    The Whittaker Smoother is a penalized least square algorithm for smoothing and interpolation
+    of noisy data. The smoothing coefficient optimization allows to automate the right amount of
+    penalty.
+    References:
+    - Eilers, A perfect smoother, https://doi.org/10.1021/ac034173t
+    - Eilers, Pesendorfer and Bonifacio, Automatic smoothing of remote sensing data,
+      https://doi.org/10.1109/Multi-Temp.2017.8076705
+    - Garcia, Robust smoothing of gridded data in one and higher dimensions with missing values,
+      https://doi.org/10.1016/j.csda.2009.09.020
+
+    Args:
+        y (np.array): raw data array (1d, expected in float64)
+        nodata (double, int): nodata value
+        llas (np.array): 1d array of s values to use for optimization
+        robust (boolean): performs a robust fitting by computing robust weights if True
+    """
+    m = y.shape[0]
+
+    # Compute weights for nodata values
+    w = 1 - np.array(
+        [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
+    )
+    n = np.sum(w)
+
+    # Eigenvalues
+    d_eigs = -2 + 2 * np.cos(np.arange(m) * np.pi / m)
+    d_eigs[0] = 1e-15
+
+    if n > 4:
+
+        z = np.zeros(m)
+        r_weights = np.ones(m)
+
+        # Setting number of robust iterations to perform
+        if not robust:
+            r_its = 1
+        else:
+            r_its = 4
+
+        # Initialising list for writing to
+        robust_gcv = []
+
+        gcv_temp = [1e15, 0]
+        for it in range(r_its):
+            if it > 1:
+                lambda_range = np.array([robust_gcv[1][1]])
+            else:
+                lambda_range = 10**llas
+
+            w_temp = w * r_weights
+            for s in lambda_range:
+
+                z = ws2d(y, s, w_temp)
+
+                gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
+                tr_H = gamma.sum()
+                wsse = (((w_temp**0.5) * (y - z)) ** 2).sum()
+                denominator = w_temp.sum() * (1 - (tr_H / (w_temp.sum()))) ** 2
+                gcv_score = wsse / denominator
+
+                gcv = [gcv_score, s]
+
+                if gcv[0] < gcv_temp[0]:
+                    gcv_temp = gcv
+                    y_temp = z
+
+            best_gcv = gcv_temp
+            s = best_gcv[1]
+
+            if robust:
+                gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
+                r_arr = y - y_temp
+
+                mad = np.median(
+                    np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0]))
+                )
+                u_arr = r_arr / (1.4826 * mad * np.sqrt(1 - gamma.sum() / n))
+
+                r_weights = (1 - (u_arr / 4.685) ** 2) ** 2
+                r_weights[(np.abs(u_arr / 4.685) > 1)] = 0
+
+                r_weights[r_arr > 0] = 1
+
+            robust_weights = w * r_weights
+
+            robust_gcv.append(best_gcv)
+
+        robust_gcv = np.array(robust_gcv)
+
+        if robust:
+            lopt[0] = robust_gcv[1, 1]
+        else:
+            lopt[0] = robust_gcv[0, 1]
+
+        z[:] = 0.0
+        z = ws2d(y, lopt[0], robust_weights)
+        np.round_(z, 0, out)
+
+    else:
+        out[:] = y[:]
+        lopt[0] = 0.0
+
+
+@guvectorize(
+    [(float64[:], float64, float64, float64[:], boolean, int16[:], float64[:])],
+    "(n),(),(),(m),() -> (n),()",
+    nopython=True,
+)
+def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
+    """
+    Whittaker filter Generalized Cross Validation optimization of lambda and asymmetric weights.
+
+    Whittaker Cross Validation (WCV)
+    The Whittaker Smoother is a penalized least square algorithm for smoothing and interpolation
+    of noisy data. The smoothing coefficient optimization allows to automate the right amount of
+    penalty.
+    References:
+    - Eilers, A perfect smoother, https://doi.org/10.1021/ac034173t
+    - Eilers, Pesendorfer and Bonifacio, Automatic smoothing of remote sensing data,
+      https://doi.org/10.1109/Multi-Temp.2017.8076705
+    - Garcia, Robust smoothing of gridded data in one and higher dimensions with missing values,
+      https://doi.org/10.1016/j.csda.2009.09.020
+
+    Args:
+        y (np.array): raw data array (1d, expected in float64)
+        nodata (double, int): nodata value
+        p (float): Envelope value for asymmetric weights
+        llas (np.array): 1d array of s values to use for optimization
+        robust (boolean): performs a robust fitting by computing robust weights if True
+    """
+    m = y.shape[0]
+
+    # Compute weights for nodata values
+    w = 1 - np.array(
+        [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
+    )
+    n = np.sum(w)
+
+    # Eigenvalues
+    d_eigs = -2 + 2 * np.cos(np.arange(m) * np.pi / m)
+    d_eigs[0] = 1e-15
+
+    if n > 4:
+
+        z = np.zeros(m)
+        znew = np.zeros(m)
+        wa = np.zeros(m)
+        r_weights = np.ones(m)
+
+        # Setting number of robust iterations to perform
+        if not robust:
+            r_its = 1
+        else:
+            r_its = 4
+
+        # Initialising list for writing to
+        robust_gcv = []
+
+        gcv_temp = [1e15, 0]
+        for it in range(r_its):
+            if it > 1:
+                lambda_range = np.array([robust_gcv[1][1]])
+            else:
+                lambda_range = 10**llas
+
+            w_temp = w * r_weights
+            for s in lambda_range:
+
+                z = ws2d(y, s, w_temp)
+
+                gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
+                tr_H = gamma.sum()
+                wsse = (((w_temp**0.5) * (y - z)) ** 2).sum()
+                denominator = w_temp.sum() * (1 - (tr_H / (w_temp.sum()))) ** 2
+                gcv_score = wsse / denominator
+
+                gcv = [gcv_score, s]
+
+                if gcv[0] < gcv_temp[0]:
+                    gcv_temp = gcv
+                    y_temp = z
+
+            best_gcv = gcv_temp
+            s = best_gcv[1]
+
+            if robust:
+                gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
+                r_arr = y - y_temp
+
+                mad = np.median(
+                    np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0]))
+                )
+                u_arr = r_arr / (1.4826 * mad * np.sqrt(1 - gamma.sum() / n))
+
+                r_weights = (1 - (u_arr / 4.685) ** 2) ** 2
+                r_weights[(np.abs(u_arr / 4.685) > 1)] = 0
+
+                r_weights[r_arr > 0] = 1
+
+            robust_weights = w * r_weights
+
+            robust_gcv.append(best_gcv)
+
+        robust_gcv = np.array(robust_gcv)
+
+        if robust:
+            lopt[0] = robust_gcv[1, 1]
+        else:
+            lopt[0] = robust_gcv[0, 1]
+
+        z[:] = 0.0
+
+        for _ in range(10):
+
+            envelope = y > z
+            wa[envelope] = p
+            wa[~envelope] = 1 - p
+            ww = robust_weights * wa
+
+            znew[0:m] = ws2d(y, lopt[0], ww)
+
+            z_tmp = np.sum(np.abs(znew - z))
+            if z_tmp == 0.0:
+                break
+
+            z[0:m] = znew[0:m]
+
+        z = ws2d(y, lopt[0], ww)
+        np.round_(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -601,7 +834,7 @@ def whitsvc(
     dim: str,
     nodata: Union[int, float],
     lc: Optional[xarray.DataArray] = None,
-    srange: Optional[numpy.ndarray] = None,
+    srange: Optional[np.ndarray] = None,
     p: Optional[float] = None,
 ) -> xarray.Dataset:
     """
@@ -666,16 +899,73 @@ def whitsvc(
             )
 
     ds_out = ds_out.to_dataset()
-    ds_out["sgrid"] = numpy.log10(sgrid).astype("float32")
+    ds_out["sgrid"] = np.log10(sgrid).astype("float32")
+
+    return ds_out
+
+
+def whitswcv(
+    ds: xarray.Dataset,
+    dim: str,
+    nodata: Union[int, float],
+    srange: Optional[np.ndarray] = None,
+    p: Optional[float] = None,
+    robust: boolean = True,
+) -> xarray.Dataset:
+    """
+    Apply whittaker with Generalized Cross Validation optimization of S.
+
+    Args:
+        ds: input dataset,
+        dim: dimension to use for filtering
+        nodata: nodata value
+        lc: lag1 autocorrelation DataArray,
+        srange: values of S for V-curve optimization (mandatory if no autocorrelation raster)
+        p: Envelope value for asymmetric weights
+        robust (boolean): perform a robust fitting by computing robust weights if True
+
+    Returns:
+        ds_out: xarray.Dataset with smoothed data and sgrid
+    """
+    if p:
+        ds_out, sgrid = xarray.apply_ufunc(
+            ws2dwcvp,
+            ds[dim],
+            nodata,
+            p,
+            srange,
+            robust,
+            input_core_dims=[["time"], [], [], ["dim0"], []],
+            output_core_dims=[["time"], []],
+            dask="parallelized",
+            keep_attrs=True,
+        )
+
+    else:
+
+        ds_out, sgrid = xarray.apply_ufunc(
+            ws2dwcv,
+            ds[dim],
+            nodata,
+            srange,
+            robust,
+            input_core_dims=[["time"], [], ["dim0"], []],
+            output_core_dims=[["time"], []],
+            dask="parallelized",
+            keep_attrs=True,
+        )
+
+    ds_out = ds_out.to_dataset()
+    ds_out["sgrid"] = np.log10(sgrid).astype("float32")
 
     return ds_out
 
 
 def whitint(
-    ds: xarray.Dataset, dim: str, labels_daily: numpy.ndarray, template: numpy.ndarray
+    ds: xarray.Dataset, dim: str, labels_daily: np.ndarray, template: np.ndarray
 ):
     """Perform temporal interpolation using the Whittaker filter."""
-    template_out = numpy.zeros(numpy.unique(labels_daily).size, dtype="u1")
+    template_out = np.zeros(np.unique(labels_daily).size, dtype="u1")
 
     ds_out = xarray.apply_ufunc(
         tinterpolate,
@@ -706,7 +996,7 @@ def autocorr(x):
         Lag-1 autocorrelation array
     """
     r, c, t = x.shape
-    z = numpy.zeros((r, c), dtype="float32")
+    z = np.zeros((r, c), dtype="float32")
 
     M = t - 1
 

@@ -242,7 +242,6 @@ class WhittakerSmoother(AccessorBase):
         as sgrid with a constant per pixel
 
         Args:
-            ds: input dataset,
             nodata: nodata value
             sg: sgrid,
             s: S value
@@ -298,7 +297,6 @@ class WhittakerSmoother(AccessorBase):
         Apply whittaker with V-curve optimization of S.
 
         Args:
-            dim: dimension to use for filtering
             nodata: nodata value
             lc: lag1 autocorrelation DataArray,
             srange: values of S for V-curve optimization (mandatory if no autocorrelation raster)
@@ -358,6 +356,67 @@ class WhittakerSmoother(AccessorBase):
                     dask="parallelized",
                     keep_attrs=True,
                 )
+
+        ds_out = ds_out.to_dataset(name=(ds_out.name or "band"))
+        ds_out["sgrid"] = np.log10(sgrid).astype("float32")
+
+        return ds_out
+
+    def whitswcv(
+        self,
+        nodata: Union[int, float],
+        srange: Optional[np.ndarray] = None,
+        p: Optional[float] = None,
+        robust: bool = True,
+    ) -> xarray.Dataset:
+        """
+        Apply whittaker with Generalized Cross Validation optimization of S.
+
+        Args:
+            nodata: nodata value
+            srange: values of S for GCV optimization
+            p: Envelope value for asymmetric weights
+            robust (boolean): performs a robust fitting by computing robust weights if True
+
+        Returns:
+            ds_out: xarray.Dataset with smoothed data and sgrid
+        """
+        if not self._check_for_timedim():
+            raise MissingTimeError("Whittaker filter requires a time dimension!")
+
+        if p:
+
+            if srange is None:
+                srange = np.arange(-1.8, 4.2, 0.2, dtype=np.float64)
+
+            ds_out, sgrid = xarray.apply_ufunc(
+                ops.ws2dwcvp,
+                self._obj,
+                nodata,
+                p,
+                srange,
+                robust,
+                input_core_dims=[["time"], [], [], ["dim0"], []],
+                output_core_dims=[["time"], []],
+                dask="parallelized",
+                keep_attrs=True,
+            )
+
+        else:
+            if srange is None:
+                srange = np.arange(-1.8, 4.2, 0.2)
+
+            ds_out, sgrid = xarray.apply_ufunc(
+                ops.ws2dwcv,
+                self._obj,
+                nodata,
+                srange,
+                robust,
+                input_core_dims=[["time"], [], ["dim0"], []],
+                output_core_dims=[["time"], []],
+                dask="parallelized",
+                keep_attrs=True,
+            )
 
         ds_out = ds_out.to_dataset(name=(ds_out.name or "band"))
         ds_out["sgrid"] = np.log10(sgrid).astype("float32")
