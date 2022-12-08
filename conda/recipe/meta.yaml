@@ -1,6 +1,5 @@
 {% set name = "seasmon-xr" %}
-{% set _name = name.replace("-", "_") %}
-{% set version = "0.1.2.dev" %}
+{% set version = os.environ.get("VERSION", "0.1.2") %}
 
 package:
   name: {{ name|lower }}

@@ -1,3 +1,4 @@
+VERSION=0.1.2
 HDC_INDEX=../../hdc-conda-index
 
 .PHONY: all
@@ -5,7 +6,7 @@ all: refresh-index
 
 .PHONY: build
 build:
-	conda build --no-test --no-anaconda-upload --output-folder ./build recipe
+	env VERSION=$(VERSION) conda build --no-test --no-anaconda-upload --output-folder ./build recipe
 
 .PHONY: refresh-index
 refresh-index: build
