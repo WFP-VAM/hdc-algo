@@ -1,12 +1,13 @@
 {% set name = "seasmon-xr" %}
 {% set version = os.environ.get("VERSION", "0.1.2") %}
+{% set src_path = os.environ.get("SRC", "../../") %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
-  path: ../../
+  path: {{src_path}}
 
 build:
   noarch: python

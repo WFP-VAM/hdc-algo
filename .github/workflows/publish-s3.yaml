@@ -21,6 +21,12 @@ jobs:
           path: ./wheels
           key: wheels-${{ github.sha }}
 
+      - uses: actions/cache@v3
+        id: pkgs_cache
+        with:
+          path: pkgs
+          key: pkgs-${{ github.sha }}
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -41,3 +47,10 @@ jobs:
 
         env:
           S3_DEST: s3://wfp-share/pypi/seasmon-xr
+
+      - name: upload conda packages to S3
+        run: |
+          aws s3 sync pkgs/ ${S3_DEST}/noarch/
+
+        env:
+          S3_DEST: s3://wfp-share/hdc
