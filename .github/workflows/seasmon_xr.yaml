@@ -184,3 +184,64 @@ jobs:
         run: |
           cd tests/
           python -m pytest -s .
+
+  package-conda:
+    runs-on: ubuntu-20.04
+    needs:
+      - wheels
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/cache@v3
+        id: pkgs_cache
+        with:
+          path: pkgs
+          key: pkgs-${{ github.sha }}
+
+      - uses: conda-incubator/setup-miniconda@v2
+        if: steps.conda_cache.outputs.cache-hit != 'true'
+        with:
+          channels: conda-forge
+          channel-priority: true
+          activate-environment: ""
+          mamba-version: "*"
+          use-mamba: true
+
+      - name: Install conda-build
+        run: |
+          conda info
+          conda list
+          mamba -V
+          mamba install conda-build
+
+      - name: Get Wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: wheels
+
+      - name: Unpack Patched Source 
+        run: |
+          src_tar=$(find wheels/ -type f -name "*.dev*.tar.gz" | head -1 | xargs readlink -f)
+          echo "Working with: $src_tar"
+          mkdir SRC
+          cd SRC && tar xvzf $src_tar --strip-components=1
+
+      - name: Build conda package
+        run: |
+          mkdir -p pkgs
+          version=$(awk '/^Version:/{print $2}' SRC/PKG-INFO)
+          echo "Version is $version"
+
+          make -C conda VERSION=$version SRC=$(readlink -f SRC)
+
+          find conda/build -type f -name "*.tar.bz2" | xargs -I{} mv {} pkgs/
+          ls -lh pkgs/
+
+      - name: Upload results (artifact)
+        uses: actions/upload-artifact@v3
+        with:
+          name: pkgs
+          path: pkgs
+          if-no-files-found: error
+
