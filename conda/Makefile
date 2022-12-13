@@ -1,5 +1,6 @@
 VERSION=0.1.2
 # relative to recipe/
+BUCKET=wfp-vam-www
 SRC=../../
 HDC_INDEX=../../hdc-conda-index
 
@@ -19,7 +20,7 @@ refresh-index: build
 .PHONY: upload
 upload: refresh-index
 	@echo Check Upload:
-	cd $(HDC_INDEX) && aws s3 sync --exclude='**/.cache/*' --dryrun . s3://wfp-share/hdc/
+	cd $(HDC_INDEX) && aws s3 sync --exclude='**/.cache/*' --dryrun . s3://$(BUCKET)/hdc/
 	@echo "Will do for real in 5 seconds"
 	@sleep 5
-	cd $(HDC_INDEX) && aws s3 sync --exclude='**/.cache/*' . s3://wfp-share/hdc/
+	cd $(HDC_INDEX) && aws s3 sync --exclude='**/.cache/*' . s3://$(BUCKET)/hdc/

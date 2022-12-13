@@ -9,7 +9,7 @@ BEGIN {
    print "<html><body>"
 }
 
-/.*\.whl/ , /.*\.gz/ {
+/.*\.(whl|gz)$/ {
   print "  <a href=\"" $4 "\">" $4 "</a></br>"
 }
 

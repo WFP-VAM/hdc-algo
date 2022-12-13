@@ -46,11 +46,11 @@ jobs:
           aws s3 cp wheels/index.html ${S3_DEST} --content-type text/html
 
         env:
-          S3_DEST: s3://wfp-share/pypi/seasmon-xr
+          S3_DEST: s3://wfp-vam-www/pypi/seasmon-xr
 
       - name: upload conda packages to S3
         run: |
           aws s3 sync pkgs/ ${S3_DEST}/noarch/
 
         env:
-          S3_DEST: s3://wfp-share/hdc
+          S3_DEST: s3://wfp-vam-www/hdc
