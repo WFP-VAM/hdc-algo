@@ -17,7 +17,6 @@ def lroo(data, out):
     dots = np.where(data.flatten() == 1)[0]
 
     for ix in range(1, dots.size):
-
         d = dots[ix] - dots[ix - 1]
         if d == 1:
             cr += 1

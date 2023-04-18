@@ -50,7 +50,6 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
     d_eigs[0] = 1e-15
 
     if n > 4:
-
         z = np.zeros(m)
         znew = np.zeros(m)
         wa = np.zeros(m)
@@ -74,7 +73,6 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
 
             w_temp = w * r_weights
             for s in lambda_range:
-
                 z = ws2d(y, s, w_temp)
 
                 gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
@@ -120,7 +118,6 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
         z[:] = 0.0
 
         for _ in range(10):
-
             envelope = y > z
             wa[envelope] = p
             wa[~envelope] = 1 - p
@@ -195,7 +192,6 @@ def _ws2dwcvp(y, w, p, llas, robust):
 
         w_temp = w * r_weights
         for s in lambda_range:
-
             z = ws2d(y, s, w_temp)
 
             gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))

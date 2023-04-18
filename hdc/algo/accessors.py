@@ -161,7 +161,6 @@ class IterativeAggregation(AccessorBase):
         yield from self._iteragg(None, n, dim, begin, end, method)
 
     def _iteragg(self, func, n, dim, begin, end, method):
-
         if dim not in self._obj.dims:
             raise ValueError(f"Dimension {dim} doesn't exist in xarray object!")
 
@@ -258,7 +257,6 @@ class WhittakerSmoother(AccessorBase):
         lmda = 10**sg if sg is not None else s
 
         if p is not None:
-
             xout = xarray.apply_ufunc(
                 ops.ws2dpgu,
                 self._obj,
@@ -272,7 +270,6 @@ class WhittakerSmoother(AccessorBase):
             )
 
         else:
-
             xout = xarray.apply_ufunc(
                 ops.ws2dgu,
                 self._obj,
@@ -327,7 +324,6 @@ class WhittakerSmoother(AccessorBase):
             )
 
         else:
-
             if srange is None:
                 raise ValueError("Need either lagcorr or srange!")
 
@@ -345,7 +341,6 @@ class WhittakerSmoother(AccessorBase):
                 )
 
             else:
-
                 ds_out, sgrid = xarray.apply_ufunc(
                     ops.ws2doptv,
                     self._obj,
@@ -385,7 +380,6 @@ class WhittakerSmoother(AccessorBase):
             raise MissingTimeError("Whittaker filter requires a time dimension!")
 
         if p:
-
             if srange is None:
                 srange = np.arange(-1.8, 4.2, 0.2, dtype=np.float64)
 
@@ -656,7 +650,6 @@ class ZonalStatistics(AccessorBase):
                 name=dask_name,
             )
         else:
-
             data = do_mean(
                 xx.data,
                 zones.data,

@@ -27,7 +27,6 @@ def ws2dpgu(y, lmda, nodata, p, out):
         Smoothed time-series array z
     """
     if lmda != 0.0:
-
         m = y.shape[0]
 
         # Compute weights for nodata values
