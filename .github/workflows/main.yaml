@@ -5,10 +5,42 @@ on:
 
 jobs:
   pyenv:
-    uses: WFP-VAM/seasmon_xr/.github/workflows/pyenv.yaml@main
-    with:
-      python-version: "3.8"
-      run: |
+    runs-on: ubuntu-20.04
+    outputs:
+      cache-key: ${{ steps.cfg.outputs.cache-key }}
+      cache-path: ${{ steps.cfg.outputs.cache-path }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+      - name: cfg
+        id: cfg
+        run: |
+          cache_path="${{ env.pythonLocation }}"
+          cache_key="${cache_path}-${{ hashFiles('requirements.txt', 'requirements_dev.txt') }}"
+          echo "cache-key=${cache_key}" >> $GITHUB_OUTPUT
+          echo "cache-path=${cache_path}" >> $GITHUB_OUTPUT
+      - name: cache deps
+        uses: actions/cache@v3
+        id: py_cache
+        with:
+          path: ${{ steps.cfg.outputs.cache-path }}
+          key: ${{ steps.cfg.outputs.cache-key }}
+          restore-keys: |
+            ${{ steps.cfg.outputs.cache-path }}-
+      - name: install dependencies
+        if: steps.py_cache.outputs.cache-hit != 'true'
+        run: |
+          pip install \
+              --upgrade --upgrade-strategy eager \
+              -r requirements.txt \
+              -r requirements_dev.txt
+          pip freeze
+      - name: dump
+        run: |
           echo $LD_LIBRARY_PATH
           echo "$PATH"
           which python
