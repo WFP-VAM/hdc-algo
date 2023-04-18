@@ -33,7 +33,9 @@ jobs:
           py_path: ${{ needs.pyenv.outputs.cache-path }}
 
       - name: run black
-        run: black --check .
+        run: |
+          black --version
+          black --check --diff hdc tests
 
   linting:
     needs:
@@ -54,11 +56,11 @@ jobs:
           py_path: ${{ needs.pyenv.outputs.cache-path }}
 
       - name: pylint
-        run: pylint seasmon_xr
+        run: pylint hdc
       - name: pydocstyle
-        run:  pydocstyle seasmon_xr
+        run:  pydocstyle hdc
       - name: mypy
-        run: mypy seasmon_xr
+        run: mypy hdc
 
   wheels:
     needs:
@@ -101,7 +103,7 @@ jobs:
 
       - name: patch version
         run: |
-          python ./scripts/patch_version.py ${GITHUB_RUN_NUMBER:-0} ./seasmon_xr/_version.py
+          python ./scripts/patch_version.py ${GITHUB_RUN_NUMBER:-0} ./hdc/algo/_version.py
 
       - name: build wheels patched version
         run: |

@@ -4,7 +4,7 @@
 import numpy as np
 import pytest
 
-from seasmon_xr.ops import (
+from hdc.algo.ops import (
     autocorr,
     autocorr_1d,
     autocorr_tyx,
@@ -17,7 +17,7 @@ from seasmon_xr.ops import (
     ws2dwcvp,
     ws2dpgu,
 )
-from seasmon_xr.ops.spi import brentq, gammafit, spifun
+from hdc.algo.ops.spi import brentq, gammafit, spifun
 
 
 @pytest.fixture

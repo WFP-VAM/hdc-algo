@@ -28,7 +28,7 @@ jobs:
           key: pkgs-${{ github.sha }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_S3_UPLOAD_ROLE }}
           aws-region: eu-central-1
@@ -39,14 +39,10 @@ jobs:
 
           # re-render index.html
           aws s3 ls ${S3_DEST}/ | ./scripts/render-simple-index.awk > wheels/index.html
-          # need to copy it as index.html into "directory"
           aws s3 cp wheels/index.html ${S3_DEST}/index.html
-          # but also as a file with the same name as directory,
-          # so that `curl http://${host}/pypi/seasmon-xr` works
-          aws s3 cp wheels/index.html ${S3_DEST} --content-type text/html
 
         env:
-          S3_DEST: s3://wfp-vam-www/pypi/seasmon-xr
+          S3_DEST: s3://wfp-vam-www/pypi/hdc-algo
 
       - name: upload conda packages to S3
         run: |

@@ -1,4 +1,4 @@
-{% set name = "seasmon-xr" %}
+{% set name = "hdc-algo" %}
 {% set version = os.environ.get("VERSION", "0.1.2") %}
 {% set src_path = os.environ.get("SRC", "../../") %}
 
@@ -29,14 +29,14 @@ requirements:
 
 test:
   imports:
-    - seasmon_xr
+    - hdc.algo
   commands:
     - pip check
   requires:
     - pip
 
 about:
-  home: https://github.com/WFP-VAM/seasmon_xr/
+  home: https://github.com/WFP-VAM/hdc-algo/
   summary: xarray tools for seasonal monitor
   license: MIT
   license_file: LICENSE

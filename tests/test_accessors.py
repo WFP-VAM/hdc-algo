@@ -8,9 +8,9 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from seasmon_xr import ops
-from seasmon_xr.accessors import MissingTimeError
-from seasmon_xr.ops.ws2d import ws2d
+from hdc.algo import ops
+from hdc.algo.accessors import MissingTimeError
+from hdc.algo.ops.ws2d import ws2d
 
 
 def to_da(xx):

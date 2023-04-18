@@ -1,11 +1,11 @@
-Conda packaging for seasmon_xr
-==============================
+Conda packaging for hdc-algo 
+============================
 
 To install in conda
 
 ```bash
 conda activate myenv
-conda install -c https://data.earthobservation.vam.wfp.org/hdc seasmon-xr
+conda install -c https://data.earthobservation.vam.wfp.org/hdc hdc-algo 
 ```
 
 Or when defining environment
@@ -17,7 +17,7 @@ channels:
   - https://data.earthobservation.vam.wfp.org/hdc
 dependencies:
   - python=3.10
-  - seasmon-xr
+  - hdc-algo
 ```
 
 Or add it to channel list
