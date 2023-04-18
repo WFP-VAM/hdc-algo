@@ -111,7 +111,6 @@ def ws2dpgu(y, lmda, nodata, p, out):
         Smoothed time-series array z
     """
     if lmda != 0.0:
-
         m = y.shape[0]
 
         # Compute weights for nodata values
@@ -563,7 +562,6 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
     d_eigs[0] = 1e-15
 
     if n > 4:
-
         z = np.zeros(m)
         r_weights = np.ones(m)
 
@@ -585,7 +583,6 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
 
             w_temp = w * r_weights
             for s in lambda_range:
-
                 z = ws2d(y, s, w_temp)
 
                 gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
@@ -677,7 +674,6 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
     d_eigs[0] = 1e-15
 
     if n > 4:
-
         z = np.zeros(m)
         znew = np.zeros(m)
         wa = np.zeros(m)
@@ -701,7 +697,6 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
 
             w_temp = w * r_weights
             for s in lambda_range:
-
                 z = ws2d(y, s, w_temp)
 
                 gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
@@ -747,7 +742,6 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
         z[:] = 0.0
 
         for _ in range(10):
-
             envelope = y > z
             wa[envelope] = p
             wa[~envelope] = 1 - p
@@ -800,7 +794,6 @@ def whits(
     lmda = sg if sg is not None else s
 
     if p is not None:
-
         xout = xarray.apply_ufunc(
             ws2dpgu,
             ds[dim],
@@ -814,7 +807,6 @@ def whits(
         )
 
     else:
-
         xout = xarray.apply_ufunc(
             ws2dgu,
             ds[dim],
@@ -868,7 +860,6 @@ def whitsvc(
         )
 
     else:
-
         if srange is None:
             raise ValueError("Need either lagcorr or srange!")
 
@@ -886,7 +877,6 @@ def whitsvc(
             )
 
         else:
-
             ds_out, sgrid = xarray.apply_ufunc(
                 ws2doptv,
                 ds[dim],
@@ -942,7 +932,6 @@ def whitswcv(
         )
 
     else:
-
         ds_out, sgrid = xarray.apply_ufunc(
             ws2dwcv,
             ds[dim],
@@ -1002,7 +991,6 @@ def autocorr(x):
 
     for rr in range(r):
         for cc in range(c):
-
             data1 = x[rr, cc, 1:]
             data2 = x[rr, cc, :-1]
 
@@ -1028,7 +1016,6 @@ def autocorr(x):
             cross_mean = cross_sum / M
 
             if std1 != 0 and std2 != 0:
-
                 lc = (cross_mean - mean1 * mean2) / (std1 * std2)
             else:
                 lc = 0.0

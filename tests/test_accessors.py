@@ -100,7 +100,6 @@ def test_period_labels_dekad(darr):
 
 
 def test_period_labels_dekad_single(darr):
-
     np.testing.assert_array_equal(darr.isel(time=0).time.dekad.label, ["200001d1"])
 
 
@@ -113,7 +112,6 @@ def test_period_labels_pentad(darr):
 
 
 def test_period_labels_pentad_single(darr):
-
     np.testing.assert_array_equal(darr.isel(time=0).time.pentad.label, ["200001p1"])
 
 
@@ -920,7 +918,6 @@ def test_whit_whitint_exception(darr):
 
 
 def test_zonal_mean(darr, zones):
-
     res = np.array(
         np.array(
             [
@@ -943,7 +940,6 @@ def test_zonal_mean(darr, zones):
 
 
 def test_zonal_mean_nodata(darr, zones):
-
     res = np.array(
         [
             [[15.0, 1.0], [82.5, 2.0]],
@@ -963,7 +959,6 @@ def test_zonal_mean_nodata(darr, zones):
 
 
 def test_zonal_mean_nodata_nan(darr, zones):
-
     darr[[0, -1], :] = darr.nodata
 
     z_ids = np.unique(zones.data)
@@ -973,7 +968,6 @@ def test_zonal_mean_nodata_nan(darr, zones):
 
 
 def test_zonal_mean_nodata_nan_float(darr, zones):
-
     res = np.array(
         [
             [[15.0, 1.0], [82.5, 2.0]],
@@ -994,7 +988,6 @@ def test_zonal_mean_nodata_nan_float(darr, zones):
 
 
 def test_zonal_zone_nodata_nan(darr, zones):
-
     res = np.array(
         [
             [["nan", 0.0], [82.5, 2.0]],
