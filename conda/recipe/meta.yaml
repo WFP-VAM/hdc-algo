@@ -1,18 +1,19 @@
 {% set name = "hdc-algo" %}
 {% set version = os.environ.get("VERSION", "0.1.2") %}
-{% set src_path = os.environ.get("SRC", "../../") %}
+{% set build = os.environ.get("BUILD", "0") %}
+
+source:
+  url: https://data.earthobservation.vam.wfp.org/pypi/{{ name }}/{{ name }}-{{ version }}.tar.gz
+
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
-source:
-  path: {{src_path}}
-
 build:
   noarch: python
   script: {{ PYTHON }} -m pip install . -vv
-  number: 0
+  number: {{ build }}
 
 requirements:
   host:
@@ -23,9 +24,6 @@ requirements:
     - xarray
     - dask-core
     - numba
-    # pinning this for numba-scipy
-    - numpy <1.23
-    - scipy <=1.7.3
 
 test:
   imports:
