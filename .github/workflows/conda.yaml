@@ -1,0 +1,64 @@
+name: Build conda package
+on:
+  push:
+    branches:
+      - conda
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Version to Build
+        default: "0.1.2"
+      build:
+        type: string
+        description: Build Number
+        default: "0"
+
+jobs:
+  conda:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Conda environment with Micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: conda/build-env.yml
+          environment-name: build 
+          cache-environment: true
+
+      - name: Check conda env
+        shell: bash -l {0}
+        run: |
+          conda info
+          conda list
+
+      - name: Build conda package
+        shell: bash -l {0}
+        run: |
+          if [[ -z "$version" ]] ; then
+            echo "Building default version"
+            make -C conda BUILD=${GITHUB_RUN_NUMBER:-0} build
+          else
+            echo "Version is $version"
+            make -C conda VERSION=$version BUILD=$build build
+          fi
+
+          echo "List build directory"
+          find conda/build/ -type f
+
+          echo "Copy pkgs"
+          mkdir -p pkgs
+          find conda/build/ -type f -name "*.tar.bz2" | xargs -I{} mv {} pkgs/
+          ls -lh pkgs/
+        env:
+          version: ${{ github.event.inputs.version }}
+          build: ${{ github.event.inputs.build }}
+
+      - name: Upload results (artifact)
+        uses: actions/upload-artifact@v3
+        with:
+          name: pkgs
+          path: pkgs
+          if-no-files-found: error
+
