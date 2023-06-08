@@ -172,7 +172,7 @@ class IterativeAggregation(AccessorBase):
 
         if begin is not None:
             try:
-                begin_ix = _index.get_loc(begin, method=method) + 1
+                (begin_ix,) = _index.get_indexer([begin], method=method) + 1
             except KeyError:
                 raise ValueError(
                     f"Value {begin} for 'begin' not found in index for dim {dim}"
@@ -182,7 +182,7 @@ class IterativeAggregation(AccessorBase):
 
         if end is not None:
             try:
-                end_ix = _index.get_loc(end, method=method)
+                (end_ix,) = _index.get_indexer([end], method=method)
             except KeyError:
                 raise ValueError(
                     f"Value {end} for 'end' not found in index for dim {dim}"
@@ -471,7 +471,7 @@ class PixelAlgorithms(AccessorBase):
                 raise ValueError(
                     "Calibration start cannot be greater than last timestamp!"
                 )
-            calstart_ix = tix.get_loc(calstart, method="bfill")
+            (calstart_ix,) = tix.get_indexer([calstart], method="bfill")
 
         calstop_ix = tix.size
         if calibration_stop is not None:
@@ -480,7 +480,7 @@ class PixelAlgorithms(AccessorBase):
                 raise ValueError(
                     "Calibration stop cannot be smaller than first timestamp!"
                 )
-            calstop_ix = tix.get_loc(calstop, method="ffill") + 1
+            (calstop_ix,) = tix.get_indexer([calstop], method="ffill") + 1
 
         if calstart_ix >= calstop_ix:
             raise ValueError("calibration_start < calibration_stop!")

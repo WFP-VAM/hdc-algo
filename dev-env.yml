@@ -3,12 +3,12 @@
 #   > conda activate vam-hdc-algo
 #   > pip install -e .
 #   > pytest -s tests/
-name: vam-hdc-algo
+name: hdc-algo
 channels:
   - conda-forge
 
 dependencies:
-  - python =3.8
+  - python =3.9
   - pip =20
 
   # hdc-algo dependencies
