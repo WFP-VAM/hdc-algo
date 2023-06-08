@@ -1,6 +1,6 @@
 # Setup instructions:
 #   > mamba env create -f dev-env.yml
-#   > conda activate vam-seasmon
+#   > conda activate vam-hdc-algo
 #   > pip install -e .
 #   > pytest -s tests/
 name: hdc-algo
@@ -11,7 +11,7 @@ dependencies:
   - python =3.9
   - pip =20
 
-  # seasmon-xr dependencies
+  # hdc-algo dependencies
   - xarray
   - numpy
   - numba
@@ -43,7 +43,3 @@ dependencies:
   - hypothesis
   - pytest-cov
   - pytest-timeout
-
-  - pip:
-      # linter
-      - shed
