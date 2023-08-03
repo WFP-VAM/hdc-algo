@@ -21,12 +21,6 @@ jobs:
           path: ./wheels
           key: wheels-${{ github.sha }}
 
-      - uses: actions/cache@v3
-        id: pkgs_cache
-        with:
-          path: pkgs
-          key: pkgs-${{ github.sha }}
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -35,6 +29,7 @@ jobs:
 
       - name: upload wheels to S3
         run: |
+          find wheels/ -type f
           aws s3 sync wheels/ ${S3_DEST}/
 
           # re-render index.html
@@ -43,10 +38,3 @@ jobs:
 
         env:
           S3_DEST: s3://wfp-vam-www/pypi/hdc-algo
-
-      - name: upload conda packages to S3
-        run: |
-          aws s3 sync pkgs/ ${S3_DEST}/noarch/
-
-        env:
-          S3_DEST: s3://wfp-vam-www/hdc
