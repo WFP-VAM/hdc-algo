@@ -1,3 +1,7 @@
+include conda/recipe/meta.yaml
+include conda/Makefile
+include conda/build-env.yaml
+include conda/README.md
 prune .github/
 prune .gitignore
 prune tox.ini

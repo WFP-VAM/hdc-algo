@@ -1,13 +1,13 @@
 {% set name = "hdc-algo" %}
-{% set version = os.environ.get("VERSION", "0.1.2") %}
+{% set data = load_setup_py_data() %}
+{% set version = os.environ.get("VERSION", "") or data.get("version").replace("-dev", ".dev") %}
 {% set build = os.environ.get("BUILD", "0") %}
 
 source:
-  url: https://data.earthobservation.vam.wfp.org/pypi/{{ name }}/{{ name }}-{{ version }}.tar.gz
-
+  path: ../../
 
 package:
-  name: {{ name|lower }}
+  name: {{ name|lower }}-core
   version: {{ version }}
 
 build:
@@ -16,9 +16,10 @@ build:
   number: {{ build }}
 
 requirements:
-  host:
-    - python >=3.7
+  build:
     - pip
+  host:
+    - python
   run:
     - python >=3.7
     - xarray

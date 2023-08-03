@@ -7,12 +7,16 @@ on:
     inputs:
       version:
         type: string
-        description: Version to Build
-        default: "0.1.2"
+        description: Version Override
+        default: ""
       build:
         type: string
         description: Build Number
         default: "0"
+      publish:
+        type: boolean
+        description: Publish to Anaconda wfp-ram channel
+        default: false
 
 jobs:
   conda:
@@ -23,32 +27,33 @@ jobs:
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: conda/build-env.yml
+          environment-file: conda/build-env.yaml
           environment-name: build 
           cache-environment: true
 
       - name: Check conda env
         shell: bash -l {0}
         run: |
+          conda config --set solver libmamba
           conda info
           conda list
 
       - name: Build conda package
         shell: bash -l {0}
         run: |
-          if [[ -z "$version" ]] ; then
-            echo "Building default version"
-            make -C conda BUILD=${GITHUB_RUN_NUMBER:-0} build
-          else
-            echo "Version is $version"
-            make -C conda VERSION=$version BUILD=$build build
+          if [[ -z "$build" ]] ; then
+             build=${GITHUB_RUN_NUMBER:-0}
           fi
+
+          echo "Version is '$version', build is '$build'"
+          make -C conda VERSION=$version BUILD=$build
 
           echo "List build directory"
           find conda/build/ -type f
 
           echo "Copy pkgs"
           mkdir -p pkgs
+          touch pkgs/built-on-$(date +%Y%m%d).txt
           find conda/build/ -type f -name "*.tar.bz2" | xargs -I{} mv {} pkgs/
           ls -lh pkgs/
         env:
@@ -61,4 +66,14 @@ jobs:
           name: pkgs
           path: pkgs
           if-no-files-found: error
+
+      - name: Publish to Anaconda
+        if: ${{ github.event.inputs.publish }}
+        shell: bash -l {0}
+        run: |
+          ls -lh pkgs/
+          anaconda upload --skip-existing pkgs/*bz2
+
+        env:
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
 
