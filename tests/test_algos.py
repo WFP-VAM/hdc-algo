@@ -17,7 +17,7 @@ from hdc.algo.ops import (
     ws2dwcvp,
     ws2dpgu,
 )
-from hdc.algo.ops.spi import brentq, gammafit, spifun
+from hdc.algo.ops.stats import brentq, gammafit, spifun
 
 
 @pytest.fixture

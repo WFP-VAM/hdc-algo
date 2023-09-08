@@ -1,4 +1,4 @@
-"""Tooling to calculate Standardized Precipitation Index (SPI)."""
+"""Numba accelerated statistical funtions."""
 from math import log, sqrt
 
 import numba

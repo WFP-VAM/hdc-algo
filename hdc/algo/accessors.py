@@ -460,7 +460,7 @@ class PixelAlgorithms(AccessorBase):
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
 
-        from .ops.spi import spifun  # pylint: disable=import-outside-toplevel
+        from .ops.stats import spifun  # pylint: disable=import-outside-toplevel
 
         tix = self._obj.get_index("time")
 
