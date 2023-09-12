@@ -575,6 +575,27 @@ class PixelAlgorithms(AccessorBase):
             output_dtypes=["float32"],
         )
 
+    def mk_trend(self):
+        """Calculate the Mann-Kendall trend along the time dimension"""
+
+        from .ops.stats import (
+            mann_kendall_trend,
+        )  # pylint: disable=import-outside-toplevel
+
+        x = xarray.apply_ufunc(
+            mann_kendall_trend,
+            self._obj,
+            input_core_dims=[["time", "lat", "lon"]],
+            output_core_dims=[["result", "lat", "lon"]],
+            output_dtypes=["float32"],
+            dask_gufunc_kwargs={"output_sizes": {"result": 4}},
+            dask="parallelized",
+            keep_attrs=True,
+        )
+
+        x.coords["result"] = ["tau", "p-value", "slope", "trend"]
+        return x.to_dataset(dim="result")
+
 
 class ZonalStatistics(AccessorBase):
     """Class to claculate zonal statistics."""

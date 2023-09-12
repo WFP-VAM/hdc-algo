@@ -1,5 +1,5 @@
 """Numba accelerated statistical funtions."""
-from math import log, sqrt
+from math import erf, log, sqrt
 
 import numba
 import numba.core.types as nt
@@ -202,3 +202,150 @@ def spifun(x, a=None, b=None, cal_start=None, cal_stop=None):
             y[ri, ci, :] = spi[:]
 
     return y
+
+
+@numba.njit
+def mk_score(x):
+    """Calculate MK score (S) and Kendall's Tau
+
+    https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
+
+    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
+    """
+    n = len(x)
+    _s1 = 0
+    _s2 = 0
+
+    for k in range(0, n - 1):
+        for kk in range(k + 1, n):
+            if x[kk] > x[k]:
+                _s1 += 1
+            if x[kk] < x[k]:
+                _s2 += 1
+
+    s = _s1 - _s2
+    tau = s / (0.5 * n * (n - 1))
+    return s, tau
+
+
+@numba.njit
+def mk_variance_s(x):
+    """Mann-Kendall's variance S
+
+    https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
+
+    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
+    """
+    xu = np.unique(x)
+    n = len(x)
+
+    if len(xu) == n:
+        return (n * (n - 1) * (2 * n + 5)) / 18
+
+    tp = 0
+    for i in range(len(xu)):
+        _tp = 0
+        for ii in range(n):
+            if xu[i] == x[ii]:
+                _tp += 1
+
+        tp += _tp * (_tp - 1) * (2 * _tp + 5)
+
+    return ((n * (n - 1) * (2 * n + 5)) - tp) / 18
+
+
+@numba.njit
+def mk_z_score(s, vs):
+    """Calculate Mann-Kendall's Z (MKZ)
+
+    https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
+
+    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
+    """
+    if s > 0:
+        return (s - 1) / sqrt(vs)
+
+    if s < 0:
+        return (s + 1) / sqrt(vs)
+
+    return 0
+
+
+@numba.njit
+def mk_p_value(z, alpha=0.05):
+    """Calculate Mann-Kendall's p value and significance
+
+    https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
+
+    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
+    """
+    p = 2 * (1 - (0.5 * (1.0 + erf(abs(z) * sqrt(0.5)))))
+    h = int(abs(z) > sc.ndtri(1 - alpha / 2))
+
+    return p, h
+
+
+@numba.njit
+def mk_sens_slope(x):
+    """Calculate Sen's slope and intercept for Mann-Kendall test
+
+    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
+    """
+    ix = 0
+    n = x.size
+    nd = int(n * (n - 1) / 2)
+    d = np.ones(nd)
+    for i in range(n - 1):
+        for j in range(i + 1, n):
+            d[ix] = (x[j] - x[i]) / (j - i)
+            ix += 1
+
+    slope = np.median(d)
+    intercept = np.median(x) - (n - 1) / 2 * slope
+
+    return slope, intercept
+
+
+@numba.njit
+def mann_kendall_trend_yxt(x):
+    """Calculate Mann-Kendall trend over y, x, t array
+
+    This function calculates MK tend for each pixel over a
+    3-d y, x, t array and returns an array of shape (y, x, 4)
+    containing Kendall's Tau, P value, Sen's slope and a trend indicator
+    in the last array dimension.
+    The trend indicator can be -1, 0 or +1 and signifies a significand decresing trend,
+    no (significant) trend or a significant upward trend, respectively.
+    """
+    ys, xs, ts = x.shape
+
+    r = np.zeros(shape=(ys, xs, 4), dtype="float32")
+
+    for yix in range(ys):
+        for xix in range(xs):
+            pass
+            s, tau = mk_score(x[yix, xix, 0:ts])
+            sv = mk_variance_s(x[yix, xix, 0:ts])
+            z = mk_z_score(s, sv)
+            p, h = mk_p_value(z)
+            slope, _ = mk_sens_slope(x[yix, xix, 0:ts])
+
+            if not h:
+                trend = 0
+            else:
+                if z > 0:
+                    trend = 1
+                if z < 0:
+                    trend = -1
+
+            r[yix, xix, 0] = tau
+            r[yix, xix, 1] = p
+            r[yix, xix, 2] = slope
+            r[yix, xix, 3] = trend
+
+    return r
