@@ -7,6 +7,8 @@ import numba_scipy  # pylint: disable=unused-import
 import numpy as np
 import scipy.special as sc
 
+from ._helper import lazycompile
+
 
 @numba.njit
 def brentq(xa, xb, s):
@@ -349,3 +351,36 @@ def mann_kendall_trend_yxt(x):
             r[yix, xix, 3] = trend
 
     return r
+
+
+@lazycompile(
+    numba.guvectorize(
+        [
+            "(int16[:], float64, float32[:], float32[:], float32[:], int8[:])",
+            "(float32[:], float64, float32[:], float32[:], float32[:], int8[:])",
+        ],
+        "(n),() -> (),(),(),()",
+        nopython=True,
+    )
+)
+def mann_kendall_trend_gu(x, nodata, tau, p, slope, trend):
+    if (x != nodata).any():
+        s, tau[0] = mk_score(x)
+        sv = mk_variance_s(x)
+        z = mk_z_score(s, sv)
+        p[0], h = mk_p_value(z)
+        slope[0], _ = mk_sens_slope(x)
+
+        if h:
+            if z > 0:
+                trend[0] = 1
+            if z < 0:
+                trend[0] = -1
+        else:
+            trend[0] = 0
+
+    else:
+        tau[0] = nodata
+        p[0] = nodata
+        slope[0] = nodata
+        trend[0] = 0
