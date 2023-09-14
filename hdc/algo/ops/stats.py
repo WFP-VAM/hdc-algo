@@ -109,6 +109,7 @@ def brentq(xa, xb, s):
 
 @numba.njit
 def gammafit(x):
+    # pylint: disable=line-too-long
     """
     Calculate gamma distribution parameters for timeseries.
 
@@ -208,11 +209,12 @@ def spifun(x, a=None, b=None, cal_start=None, cal_stop=None):
 
 @numba.njit
 def mk_score(x):
-    """Calculate MK score (S) and Kendall's Tau
+    """Calculate MK score (S) and Kendall's Tau.
 
     https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
 
-    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Hussain et al., (2019). pyMannKendall:
+    a python package for non parametric Mann Kendall family of trend tests..
     Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
     """
     n = len(x)
@@ -233,11 +235,12 @@ def mk_score(x):
 
 @numba.njit
 def mk_variance_s(x):
-    """Mann-Kendall's variance S
+    """Mann-Kendall's variance S.
 
     https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
 
-    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Hussain et al., (2019). pyMannKendall:
+    a python package for non parametric Mann Kendall family of trend tests..
     Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
     """
     xu = np.unique(x)
@@ -247,7 +250,7 @@ def mk_variance_s(x):
         return (n * (n - 1) * (2 * n + 5)) / 18
 
     tp = 0
-    for i in range(len(xu)):
+    for i in range(len(xu)):  # pylint: disable=consider-using-enumerate
         _tp = 0
         for ii in range(n):
             if xu[i] == x[ii]:
@@ -260,11 +263,12 @@ def mk_variance_s(x):
 
 @numba.njit
 def mk_z_score(s, vs):
-    """Calculate Mann-Kendall's Z (MKZ)
+    """Calculate Mann-Kendall's Z (MKZ).
 
     https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
 
-    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Hussain et al., (2019). pyMannKendall:
+    a python package for non parametric Mann Kendall family of trend tests..
     Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
     """
     if s > 0:
@@ -278,11 +282,12 @@ def mk_z_score(s, vs):
 
 @numba.njit
 def mk_p_value(z, alpha=0.05):
-    """Calculate Mann-Kendall's p value and significance
+    """Calculate Mann-Kendall's p value and significance.
 
     https://vsp.pnnl.gov/help/vsample/design_trend_mann_kendall.htm
 
-    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Hussain et al., (2019). pyMannKendall:
+    a python package for non parametric Mann Kendall family of trend tests..
     Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
     """
     p = 2 * (1 - (0.5 * (1.0 + erf(abs(z) * sqrt(0.5)))))
@@ -293,9 +298,10 @@ def mk_p_value(z, alpha=0.05):
 
 @numba.njit
 def mk_sens_slope(x):
-    """Calculate Sen's slope and intercept for Mann-Kendall test
+    """Calculate Sen's slope and intercept for Mann-Kendall test.
 
-    Hussain et al., (2019). pyMannKendall: a python package for non parametric Mann Kendall family of trend tests..
+    Hussain et al., (2019). pyMannKendall:
+    a python package for non parametric Mann Kendall family of trend tests..
     Journal of Open Source Software, 4(39), 1556, https://doi.org/10.21105/joss.01556
     """
     ix = 0
@@ -315,7 +321,7 @@ def mk_sens_slope(x):
 
 @numba.njit
 def mann_kendall_trend_yxt(x):
-    """Calculate Mann-Kendall trend over y, x, t array
+    """Calculate Mann-Kendall trend over y, x, t array.
 
     This function calculates MK tend for each pixel over a
     3-d y, x, t array and returns an array of shape (y, x, 4)
@@ -330,7 +336,6 @@ def mann_kendall_trend_yxt(x):
 
     for yix in range(ys):
         for xix in range(xs):
-            pass
             s, tau = mk_score(x[yix, xix, 0:ts])
             sv = mk_variance_s(x[yix, xix, 0:ts])
             z = mk_z_score(s, sv)
@@ -355,9 +360,10 @@ def mann_kendall_trend_yxt(x):
 
 @numba.njit
 def mann_kendall_trend_1d(x):
-    """Caluclate Mann-Kendall trend metric on 1-d array
+    """Caluclate Mann-Kendall trend metric on 1-d array.
 
-    This function calculates MK tend metrics (Kendall's Tau, P value, Sen's slope and a trend indicator).
+    This function calculates MK tend metrics
+    (Kendall's Tau, P value, Sen's slope and a trend indicator).
     The trend indicator can be -1, 0 or +1 and signifies a significand decresing trend,
     no (significant) trend or a significant upward trend, respectively.
     """
@@ -391,7 +397,7 @@ def mann_kendall_trend_1d(x):
     )
 )
 def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
-    """Guvectorize wrapper for mann_kendall_trend_1d with nodata"""
+    """Guvectorize wrapper for mann_kendall_trend_1d with nodata."""
     if (x != nodata).any():
         tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)
 
@@ -413,5 +419,5 @@ def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
     )
 )
 def _mann_kendall_trend_gu(x, tau, p, slope, trend):
-    """Guvectorize wrapper for mann_kendall_trend_1d"""
+    """Guvectorize wrapper for mann_kendall_trend_1d."""
     tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)

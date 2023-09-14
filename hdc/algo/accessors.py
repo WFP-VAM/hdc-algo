@@ -575,26 +575,46 @@ class PixelAlgorithms(AccessorBase):
             output_dtypes=["float32"],
         )
 
-    def mk_trend(self):
-        """Calculate the Mann-Kendall trend along the time dimension"""
-
+    def mktrend(self):
+        """Calculate the Mann-Kendall trend along the time dimension."""
+        # pylint: disable=import-outside-toplevel
         from .ops.stats import (
-            mann_kendall_trend,
-        )  # pylint: disable=import-outside-toplevel
-
-        x = xarray.apply_ufunc(
-            mann_kendall_trend,
-            self._obj,
-            input_core_dims=[["time", "lat", "lon"]],
-            output_core_dims=[["result", "lat", "lon"]],
-            output_dtypes=["float32"],
-            dask_gufunc_kwargs={"output_sizes": {"result": 4}},
-            dask="parallelized",
-            keep_attrs=True,
+            _mann_kendall_trend_gu,
+            _mann_kendall_trend_gu_nd,
         )
 
-        x.coords["result"] = ["tau", "p-value", "slope", "trend"]
-        return x.to_dataset(dim="result")
+        nodata = self._obj.attrs.get("nodata", None)
+        if nodata is None:
+            warn("Calculating trend without nodata value defined!")
+
+            x = xarray.apply_ufunc(
+                _mann_kendall_trend_gu,
+                self._obj,
+                input_core_dims=[["time"]],
+                output_core_dims=[[], [], [], []],
+                output_dtypes=["float32", "float32", "float32", "int8"],
+                dask="parallelized",
+                keep_attrs=True,
+            )
+        else:
+            x = xarray.apply_ufunc(
+                _mann_kendall_trend_gu_nd,
+                self._obj,
+                nodata,
+                input_core_dims=[["time"], []],
+                output_core_dims=[[], [], [], []],
+                output_dtypes=["float32", "float32", "float32", "int8"],
+                dask="parallelized",
+                keep_attrs=True,
+            )
+
+        x = xarray.merge(
+            [
+                xx.to_dataset(name=n)
+                for xx, n in zip(x, ["tau", "pvalue", "slope", "trend"])
+            ]
+        )
+        return x
 
 
 class ZonalStatistics(AccessorBase):
