@@ -17,7 +17,16 @@ from hdc.algo.ops import (
     ws2dwcvp,
     ws2dpgu,
 )
-from hdc.algo.ops.stats import brentq, gammafit, spifun
+from hdc.algo.ops.stats import (
+    brentq,
+    gammafit,
+    spifun,
+    mk_score,
+    mk_p_value,
+    mk_z_score,
+    mk_variance_s,
+    mk_sens_slope,
+)
 
 
 @pytest.fixture
@@ -193,3 +202,31 @@ def test_ws2dwcvp(ts):
     z, l = ws2dwcvp(_ts, 0, 0.8, np.arange(-2, 2), True)
     np.testing.assert_array_equal(z, [23, 21, 19, 16, 15, 13, 13, 13, 13, 13])
     assert l == 10.0
+
+
+def test_mk_score(ts):
+    assert mk_score(ts) == pytest.approx((-5, -0.1111111))
+
+
+def test_mk_variance_s(ts):
+    assert mk_variance_s(ts) == pytest.approx(125)
+
+
+def test_mk_z_score(ts):
+    s, _ = mk_score(ts)
+    sv = mk_variance_s(ts)
+    assert mk_z_score(s, sv) == pytest.approx(-0.35777087639996635)
+
+
+def test_mk_p_value(ts):
+    s, _ = mk_score(ts)
+    sv = mk_variance_s(ts)
+    z = mk_z_score(s, sv)
+
+    assert mk_p_value(z) == pytest.approx((0.7205147871362552, 0))
+
+
+def test_mk_sens_slope(ts):
+    assert mk_sens_slope(ts) == pytest.approx(
+        (-0.054893050926832804, 1.1630310828723567)
+    )
