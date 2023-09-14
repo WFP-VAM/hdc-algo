@@ -353,6 +353,33 @@ def mann_kendall_trend_yxt(x):
     return r
 
 
+@numba.njit
+def mann_kendall_trend_1d(x):
+    """Caluclate Mann-Kendall trend metric on 1-d array
+
+    This function calculates MK tend metrics (Kendall's Tau, P value, Sen's slope and a trend indicator).
+    The trend indicator can be -1, 0 or +1 and signifies a significand decresing trend,
+    no (significant) trend or a significant upward trend, respectively.
+    """
+    s, tau = mk_score(x)
+    sv = mk_variance_s(x)
+    z = mk_z_score(s, sv)
+    p, h = mk_p_value(z)
+    slope, _ = mk_sens_slope(x)
+
+    if not h:
+        return tau, p, slope, 0
+
+    if z > 0:
+        trend = 1
+    elif z < 0:
+        trend = -1
+    else:
+        trend = 0
+
+    return tau, p, slope, trend
+
+
 @lazycompile(
     numba.guvectorize(
         [
@@ -363,24 +390,28 @@ def mann_kendall_trend_yxt(x):
         nopython=True,
     )
 )
-def mann_kendall_trend_gu(x, nodata, tau, p, slope, trend):
+def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
+    """Guvectorize wrapper for mann_kendall_trend_1d with nodata"""
     if (x != nodata).any():
-        s, tau[0] = mk_score(x)
-        sv = mk_variance_s(x)
-        z = mk_z_score(s, sv)
-        p[0], h = mk_p_value(z)
-        slope[0], _ = mk_sens_slope(x)
-
-        if h:
-            if z > 0:
-                trend[0] = 1
-            if z < 0:
-                trend[0] = -1
-        else:
-            trend[0] = 0
+        tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)
 
     else:
         tau[0] = nodata
         p[0] = nodata
         slope[0] = nodata
         trend[0] = 0
+
+
+@lazycompile(
+    numba.guvectorize(
+        [
+            "(int16[:], float32[:], float32[:], float32[:], int8[:])",
+            "(float32[:], float32[:], float32[:], float32[:], int8[:])",
+        ],
+        "(n) -> (),(),(),()",
+        nopython=True,
+    )
+)
+def _mann_kendall_trend_gu(x, tau, p, slope, trend):
+    """Guvectorize wrapper for mann_kendall_trend_1d"""
+    tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)
