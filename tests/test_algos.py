@@ -26,6 +26,7 @@ from hdc.algo.ops.stats import (
     mk_z_score,
     mk_variance_s,
     mk_sens_slope,
+    mann_kendall_trend_1d,
 )
 
 
@@ -230,3 +231,23 @@ def test_mk_sens_slope(ts):
     assert mk_sens_slope(ts) == pytest.approx(
         (-0.054893050926832804, 1.1630310828723567)
     )
+
+
+def test_mann_kendall_trend_1d(ts):
+    assert mann_kendall_trend_1d(ts) == pytest.approx(
+        (-0.1111111111111111, 0.7205147871362552, -0.054893050926832804, 0)
+    )
+
+
+def test_mann_kendall_trend_1d_na(ts):
+    ts[-1] = np.nan
+    *_, slope, _t = mann_kendall_trend_1d(ts)
+    assert slope == pytest.approx(-0.06725773844053026)
+
+
+def test_mann_kendall_trend_1d_trend(ts):
+    *_, trend = mann_kendall_trend_1d(ts + np.arange(ts.size))
+    assert trend == 1
+
+    *_, trend = mann_kendall_trend_1d(ts - np.arange(ts.size))
+    assert trend == -1
