@@ -313,8 +313,8 @@ def mk_sens_slope(x):
             d[ix] = (x[j] - x[i]) / (j - i)
             ix += 1
 
-    slope = np.median(d)
-    intercept = np.median(x) - (n - 1) / 2 * slope
+    slope = np.nanmedian(d)
+    intercept = np.nanmedian(x) - (n - 1) / 2 * slope
 
     return slope, intercept
 
