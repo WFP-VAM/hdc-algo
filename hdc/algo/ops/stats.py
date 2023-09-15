@@ -405,7 +405,7 @@ def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
         tau[0] = nodata
         p[0] = nodata
         slope[0] = nodata
-        trend[0] = 0
+        trend[0] = -2
 
 
 @lazycompile(

@@ -614,6 +614,8 @@ class PixelAlgorithms(AccessorBase):
                 for xx, n in zip(x, ["tau", "pvalue", "slope", "trend"])
             ]
         )
+
+        x.trend.attrs["nodata"] = -2
         return x
 
 
