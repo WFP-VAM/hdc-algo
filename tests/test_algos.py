@@ -20,7 +20,8 @@ from hdc.algo.ops import (
 from hdc.algo.ops.stats import (
     brentq,
     gammafit,
-    spifun,
+    gammastd,
+    gammastd_yxt,
     mk_score,
     mk_p_value,
     mk_z_score,
@@ -90,7 +91,7 @@ def test_gammafit(ts):
 
 
 def test_spi(ts):
-    xspi = spifun(ts.reshape(1, 1, -1))
+    xspi = gammastd_yxt(ts.reshape(1, 1, -1))
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
         xspi[0, 0, :],
@@ -99,10 +100,9 @@ def test_spi(ts):
 
 
 def test_spi_nofit(ts):
-    xspi = spifun(ts.reshape(1, 1, -1), a=1, b=2)
-    assert xspi.shape == (1, 1, 10)
+    xspi = gammastd(ts.reshape(1, 1, -1), 0, len(ts), a=1, b=2)
     np.testing.assert_array_equal(
-        xspi[0, 0, :],
+        xspi,
         [
             -809.0,
             765.0,
@@ -119,7 +119,7 @@ def test_spi_nofit(ts):
 
 
 def test_spi_selfit(ts):
-    xspi = spifun(ts.reshape(1, 1, -1), cal_start=0, cal_stop=3)
+    xspi = gammastd_yxt(ts.reshape(1, 1, -1), cal_start=0, cal_stop=3)
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
         xspi[0, 0, :],
@@ -141,10 +141,9 @@ def test_spi_selfit(ts):
 def test_spi_selfit_2(ts):
     cal_start = 2
     cal_stop = 8
-
     a, b = gammafit(ts[cal_start:cal_stop])
-    xspi_ref = spifun(ts.reshape(1, 1, -1), a=a, b=b)
-    xspi = spifun(ts.reshape(1, 1, -1), cal_start=cal_start, cal_stop=cal_stop)
+    xspi_ref = gammastd(ts, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b)
+    xspi = gammastd(ts, cal_start=cal_start, cal_stop=cal_stop)
     np.testing.assert_equal(xspi, xspi_ref)
 
 

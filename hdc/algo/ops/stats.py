@@ -123,7 +123,6 @@ def gammafit(x):
     logs = 0.0
 
     for xx in x:
-        print(type(xts), type(xx))
         if xx > 0:
             xts += xx
             logs += log(xx)
