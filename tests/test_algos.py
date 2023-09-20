@@ -68,30 +68,32 @@ def test_autocorr(ts):
     ac = autocorr(ts.reshape(1, 1, -1))
     np.testing.assert_almost_equal(ac, 0.00398337)
 
-    np.testing.assert_almost_equal(autocorr_1d(ts), 0.00398337)
+    np.testing.assert_almost_equal(autocorr_1d.py_func(ts), 0.00398337)
     np.testing.assert_almost_equal(autocorr_1d_reference(ts), 0.00398337)
     np.testing.assert_almost_equal(autocorr_tyx(ts.reshape(-1, 1, 1)), 0.00398337)
 
 
 def test_autocorr_nodata(ts_ndvi):
     nodata, ts = ts_ndvi
-    rr = autocorr_1d(ts, nodata)
+    rr = autocorr_1d.py_func(ts, nodata)
     rr_ref = autocorr_1d_reference(ts, nodata)
     assert rr == pytest.approx(rr_ref, rel=1e-3)
 
 
 def test_brentq():
-    x = brentq(xa=0.6446262296476516, xb=1.5041278691778537, s=0.5278852360624721)
+    x = brentq.py_func(
+        xa=0.6446262296476516, xb=1.5041278691778537, s=0.5278852360624721
+    )
     assert x == pytest.approx(1.083449238500003)
 
 
 def test_gammafit(ts):
-    parameters = gammafit(ts)
+    parameters = gammafit.py_func(ts)
     assert parameters == pytest.approx((1.083449238500003, 0.9478709674697126))
 
 
 def test_spi(ts):
-    xspi = gammastd_yxt(ts.reshape(1, 1, -1))
+    xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1))
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
         xspi[0, 0, :],
@@ -100,9 +102,10 @@ def test_spi(ts):
 
 
 def test_spi_nofit(ts):
-    xspi = gammastd(ts.reshape(1, 1, -1), 0, len(ts), a=1, b=2)
+    xspi = gammastd.py_func(ts, 0, len(ts), a=1, b=2)
+    xspi
     np.testing.assert_array_equal(
-        xspi,
+        (xspi * 1000).round(),
         [
             -809.0,
             765.0,
@@ -119,7 +122,7 @@ def test_spi_nofit(ts):
 
 
 def test_spi_selfit(ts):
-    xspi = gammastd_yxt(ts.reshape(1, 1, -1), cal_start=0, cal_stop=3)
+    xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1), cal_start=0, cal_stop=3)
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
         xspi[0, 0, :],
@@ -141,9 +144,9 @@ def test_spi_selfit(ts):
 def test_spi_selfit_2(ts):
     cal_start = 2
     cal_stop = 8
-    a, b = gammafit(ts[cal_start:cal_stop])
-    xspi_ref = gammastd(ts, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b)
-    xspi = gammastd(ts, cal_start=cal_start, cal_stop=cal_stop)
+    a, b = gammafit.py_func(ts[cal_start:cal_stop])
+    xspi_ref = gammastd.py_func(ts, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b)
+    xspi = gammastd.py_func(ts, cal_start=cal_start, cal_stop=cal_stop)
     np.testing.assert_equal(xspi, xspi_ref)
 
 
@@ -205,48 +208,48 @@ def test_ws2dwcvp(ts):
 
 
 def test_mk_score(ts):
-    assert mk_score(ts) == pytest.approx((-5, -0.1111111))
+    assert mk_score.py_func(ts) == pytest.approx((-5, -0.1111111))
 
 
 def test_mk_variance_s(ts):
-    assert mk_variance_s(ts) == pytest.approx(125)
+    assert mk_variance_s.py_func(ts) == pytest.approx(125)
 
 
 def test_mk_z_score(ts):
-    s, _ = mk_score(ts)
-    sv = mk_variance_s(ts)
-    assert mk_z_score(s, sv) == pytest.approx(-0.35777087639996635)
+    s, _ = mk_score.py_func(ts)
+    sv = mk_variance_s.py_func(ts)
+    assert mk_z_score.py_func(s, sv) == pytest.approx(-0.35777087639996635)
 
 
 def test_mk_p_value(ts):
-    s, _ = mk_score(ts)
-    sv = mk_variance_s(ts)
-    z = mk_z_score(s, sv)
+    s, _ = mk_score.py_func(ts)
+    sv = mk_variance_s.py_func(ts)
+    z = mk_z_score.py_func(s, sv)
 
     assert mk_p_value(z) == pytest.approx((0.7205147871362552, 0))
 
 
 def test_mk_sens_slope(ts):
-    assert mk_sens_slope(ts) == pytest.approx(
+    assert mk_sens_slope.py_func(ts) == pytest.approx(
         (-0.054893050926832804, 1.1630310828723567)
     )
 
 
 def test_mann_kendall_trend_1d(ts):
-    assert mann_kendall_trend_1d(ts) == pytest.approx(
+    assert mann_kendall_trend_1d.py_func(ts) == pytest.approx(
         (-0.1111111111111111, 0.7205147871362552, -0.054893050926832804, 0)
     )
 
 
 def test_mann_kendall_trend_1d_na(ts):
     ts[-1] = np.nan
-    *_, slope, _t = mann_kendall_trend_1d(ts)
+    *_, slope, _t = mann_kendall_trend_1d.py_func(ts)
     assert slope == pytest.approx(-0.06725773844053026)
 
 
 def test_mann_kendall_trend_1d_trend(ts):
-    *_, trend = mann_kendall_trend_1d(ts + np.arange(ts.size))
+    *_, trend = mann_kendall_trend_1d.py_func(ts + np.arange(ts.size))
     assert trend == 1
 
-    *_, trend = mann_kendall_trend_1d(ts - np.arange(ts.size))
+    *_, trend = mann_kendall_trend_1d.py_func(ts - np.arange(ts.size))
     assert trend == -1
