@@ -2,7 +2,6 @@
 from math import erf, log, sqrt
 
 import numba
-import numba.core.types as nt
 import numba_scipy  # pylint: disable=unused-import
 import numpy as np
 import scipy.special as sc
@@ -153,7 +152,8 @@ def gammafit(x):
 def gammastd(x, cal_start, cal_stop, a=0, b=0):
     """Calculate a standardized index for observations based on fitted gamma distribution.
 
-    The standardized index are anomalies relative to a variable's statistics bsaed on a fitted gamma distribution.
+    The standardized index are anomalies relative to a variable's statistics
+    based on a fitted gamma distribution.
 
     Args:
         x: observations as 1-d array

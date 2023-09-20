@@ -460,7 +460,7 @@ class PixelAlgorithms(AccessorBase):
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
 
-        from .ops.stats import spifun  # pylint: disable=import-outside-toplevel
+        from .ops.stats import gammastd_yxt  # pylint: disable=import-outside-toplevel
 
         tix = self._obj.get_index("time")
 
@@ -491,7 +491,7 @@ class PixelAlgorithms(AccessorBase):
             )
 
         res = xarray.apply_ufunc(
-            spifun,
+            gammastd_yxt,
             self._obj,
             kwargs={
                 "cal_start": calstart_ix,
@@ -500,7 +500,6 @@ class PixelAlgorithms(AccessorBase):
             input_core_dims=[["time"]],
             output_core_dims=[["time"]],
             dask="parallelized",
-            output_dtypes=["int16"],
         )
 
         res.attrs.update(
