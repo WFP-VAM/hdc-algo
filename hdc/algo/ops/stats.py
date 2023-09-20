@@ -119,10 +119,11 @@ def gammafit(x):
     All rights reserved.
     """
     n = 0
-    xts = 0
-    logs = 0
+    xts = 0.0
+    logs = 0.0
 
     for xx in x:
+        print(type(xts), type(xx))
         if xx > 0:
             xts += xx
             logs += log(xx)
@@ -150,9 +151,60 @@ def gammafit(x):
 
 
 @numba.njit
-def spifun(x, a=None, b=None, cal_start=None, cal_stop=None):
-    """Calculate SPI with gamma distribution for 3d array."""
-    y = np.full_like(x, -9999)
+def gammastd(x, cal_start, cal_stop, a=0, b=0):
+    """Calculate a standardized index for observations based on fitted gamma distribution.
+
+    The standardized index are anomalies relative to a variable's statistics bsaed on a fitted gamma distribution.
+
+    Args:
+        x: observations as 1-d array
+        cal_start: start index for values of x used to perform gammafit
+        cal_stop: end index for values of x used to perform gammafit
+        a: override for alpha parameter of gamma distribution (only together with beta)
+        b: override for beta parameter of gamma distribution (only together with alpha)
+    """
+    t = len(x)
+
+    n_valid = 0
+
+    for val in x:
+        if val > 0:
+            n_valid += 1
+
+    p_zero = 1 - (n_valid / t)
+
+    if p_zero > 0.9:
+        return np.full_like(x, -9999, dtype="float64")
+
+    if (a == 0) and (b == 0):
+        alpha, beta = gammafit(x[cal_start:cal_stop])
+    else:
+        alpha, beta = (a, b)
+
+    if alpha == 0 or beta == 0:
+        return np.full_like(x, -9999, dtype="float64")
+
+    y = np.full(t, p_zero, dtype="float64")  # type: ignore
+
+    for ix in range(t):
+        if x[ix] > 0:
+            y[ix] = p_zero + (
+                (1 - p_zero)
+                * sc.gammainc(alpha, x[ix] / beta)  # pylint: disable=no-member
+            )
+
+        y[ix] = sc.ndtri(y[ix])
+    return y
+
+
+@numba.njit
+def gammastd_yxt(
+    x,
+    cal_start=None,
+    cal_stop=None,
+):
+    """Calculate gammastd on 3d y,x,t array."""
+    y = np.full_like(x, -9999, dtype=x.dtype)
     r, c, t = x.shape
 
     if cal_start is None:
@@ -161,48 +213,13 @@ def spifun(x, a=None, b=None, cal_start=None, cal_stop=None):
     if cal_stop is None:
         cal_stop = t
 
-    cal_ix = np.arange(cal_start, cal_stop)
-
     for ri in range(r):
         for ci in range(c):
             xt = x[ri, ci, :]
-            valid_ix = []
-
-            for tix in range(t):
-                if xt[tix] > 0:
-                    valid_ix.append(tix)
-
-            n_valid = len(valid_ix)
-
-            p_zero = 1 - (n_valid / t)
-
-            if p_zero > 0.9:
-                y[ri, ci, :] = -9999
-                continue
-
-            if a is None or b is None:
-                alpha, beta = gammafit(xt[cal_ix])
-            else:
-                alpha, beta = (a, b)
-
-            if alpha == 0 or beta == 0:
-                y[ri, ci, :] = -9999
-                continue
-
-            spi = np.full(t, p_zero, dtype=nt.float64)  # type: ignore
-
-            for tix in valid_ix:
-                spi[tix] = p_zero + (
-                    (1 - p_zero)
-                    * sc.gammainc(alpha, xt[tix] / beta)  # pylint: disable=no-member
-                )
-
-            for tix in range(t):
-                spi[tix] = sc.ndtri(spi[tix]) * 1000
-
-            np.round_(spi, 0, spi)
-
-            y[ri, ci, :] = spi[:]
+            s = gammastd(xt, cal_start, cal_stop)
+            s = s * 1000
+            np.round_(s, 0, s)
+            y[ri, ci, :] = s[:]
 
     return y
 
