@@ -216,9 +216,10 @@ def gammastd_yxt(
         for ci in range(c):
             xt = x[ri, ci, :]
             s = gammastd(xt, cal_start, cal_stop)
-            s = s * 1000
-            np.round_(s, 0, s)
-            y[ri, ci, :] = s[:]
+            if (s != -9999).sum() > 0:
+                s = s * 1000
+                np.round_(s, 0, s)
+                y[ri, ci, :] = s[:]
 
     return y
 
