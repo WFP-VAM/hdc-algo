@@ -460,7 +460,7 @@ class PixelAlgorithms(AccessorBase):
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
 
-        from .ops.spi import spifun  # pylint: disable=import-outside-toplevel
+        from .ops.stats import gammastd_yxt  # pylint: disable=import-outside-toplevel
 
         tix = self._obj.get_index("time")
 
@@ -491,7 +491,7 @@ class PixelAlgorithms(AccessorBase):
             )
 
         res = xarray.apply_ufunc(
-            spifun,
+            gammastd_yxt,
             self._obj,
             kwargs={
                 "cal_start": calstart_ix,
@@ -500,7 +500,6 @@ class PixelAlgorithms(AccessorBase):
             input_core_dims=[["time"]],
             output_core_dims=[["time"]],
             dask="parallelized",
-            output_dtypes=["int16"],
         )
 
         res.attrs.update(
@@ -574,6 +573,49 @@ class PixelAlgorithms(AccessorBase):
             dask="parallelized",
             output_dtypes=["float32"],
         )
+
+    def mktrend(self):
+        """Calculate the Mann-Kendall trend along the time dimension."""
+        # pylint: disable=import-outside-toplevel
+        from .ops.stats import (
+            _mann_kendall_trend_gu,
+            _mann_kendall_trend_gu_nd,
+        )
+
+        nodata = self._obj.attrs.get("nodata", None)
+        if nodata is None:
+            warn("Calculating trend without nodata value defined!")
+
+            x = xarray.apply_ufunc(
+                _mann_kendall_trend_gu,
+                self._obj,
+                input_core_dims=[["time"]],
+                output_core_dims=[[], [], [], []],
+                output_dtypes=["float32", "float32", "float32", "int8"],
+                dask="parallelized",
+                keep_attrs=True,
+            )
+        else:
+            x = xarray.apply_ufunc(
+                _mann_kendall_trend_gu_nd,
+                self._obj,
+                nodata,
+                input_core_dims=[["time"], []],
+                output_core_dims=[[], [], [], []],
+                output_dtypes=["float32", "float32", "float32", "int8"],
+                dask="parallelized",
+                keep_attrs=True,
+            )
+
+        x = xarray.merge(
+            [
+                xx.to_dataset(name=n)
+                for xx, n in zip(x, ["tau", "pvalue", "slope", "trend"])
+            ]
+        )
+
+        x.trend.attrs["nodata"] = -2
+        return x
 
 
 class ZonalStatistics(AccessorBase):

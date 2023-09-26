@@ -1,10 +1,8 @@
 # hdc-algo
 
-Seasonal Monitor on AWS
-
 [![hdc-algo](https://github.com/WFP-VAM/hdc-algo/actions/workflows/main.yaml/badge.svg?branch=main)](https://github.com/WFP-VAM/hdc-algo/actions/workflows/main.yaml)
 
-For guides and How-To's, please check out the [wiki](https://github.com/WFP-VAM/hdc-algo/wiki).
+This repo contains (mostly numba accelerated) algorithmic code and selected additional functions used in the WFP HumanitarianDataCube (HDC).
 
 ## Installation
 
