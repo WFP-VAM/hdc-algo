@@ -453,8 +453,8 @@ class PixelAlgorithms(AccessorBase):
 
     def spi(
         self,
-        calibration_start=None,
-        calibration_stop=None,
+        calibration_start: Optional[str] = None,
+        calibration_stop: Optional[str] = None,
     ):
         """Calculate the SPI along the time dimension."""
         if not self._check_for_timedim():
