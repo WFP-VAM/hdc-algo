@@ -202,8 +202,9 @@ def gammastd_yxt(
     cal_start=None,
     cal_stop=None,
 ):
-    """Calculate gammastd on 3d y,x,t array."""
-    y = np.full_like(x, -9999, dtype=x.dtype)
+    """Calculate `gammastd` on 3d y,x,t array.
+    `gammastd` outputs are scaled by 1000 and cast to in16."""
+    y = np.full_like(x, -9999, dtype="int16")
     r, c, t = x.shape
 
     if cal_start is None:
