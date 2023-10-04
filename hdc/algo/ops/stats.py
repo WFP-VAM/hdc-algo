@@ -203,7 +203,11 @@ def gammastd_yxt(
     cal_stop=None,
 ):
     """Calculate `gammastd` on 3d y,x,t array.
-    `gammastd` outputs are scaled by 1000 and cast to in16."""
+
+    The function `gammastd` is applied over 3d each row and column
+    of the array with the assumption the time dimension is the last one.
+    The outputs are scaled by 1000 and cast to in16.
+    """
     y = np.full_like(x, -9999, dtype="int16")
     r, c, t = x.shape
 
