@@ -10,6 +10,7 @@ def test_dekad():
     assert Dekad("202202d1").year == 2022
     assert Dekad("202202d1").month == 2
     assert Dekad("202202d1").idx == 1
+    assert Dekad("202202d1").yidx == 4
     assert Dekad("202202d1").start_date == datetime(2022, 2, 1)
 
     assert Dekad("202202d3").end_date == datetime(2022, 3, 1) - eps
