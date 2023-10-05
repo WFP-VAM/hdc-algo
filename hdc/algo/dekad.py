@@ -50,6 +50,11 @@ class Dekad:
         return 1 + (self._dkd % 3)
 
     @property
+    def yidx(self) -> int:
+        """Dekad index within a year: ``1..36``."""
+        return 3 * (self.month - 1) + self.idx
+
+    @property
     def raw(self) -> int:
         """Access raw integer representations."""
         return self._dkd
