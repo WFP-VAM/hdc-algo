@@ -1,0 +1,105 @@
+"""Dekad helper class."""
+from datetime import date, datetime, timedelta
+from typing import Tuple, Union, overload
+
+
+class Dekad:
+    """
+    Dekad.
+
+    Represented as a single integer. There are 36 (3*12) dekads in a year.
+    Integer representation of a dekad is:
+    ``36*year + 3*(month-1) + (dekad_of_the_month - 1)``.
+
+    Where ``month in [1, 12]`` and ``dekad_of_the_month`` is one of ``1,2,3``.
+    """
+
+    __slots__ = ("_dkd",)
+
+    def __init__(self, dekad: Union[str, int, datetime, date]):
+        """
+        Format ``YYYYMMd{1,2,3}``.
+        """
+        if isinstance(dekad, str):
+            year, month, idx = int(dekad[:4]), int(dekad[4:6]), int(dekad[-1])
+            assert 1 <= month <= 12
+            assert 1 <= idx <= 3
+            self._dkd = 36 * year + 3 * (month - 1) + (idx - 1)
+        elif isinstance(dekad, (date, datetime)):
+            d = dekad
+            self._dkd = 36 * d.year + 3 * (d.month - 1) + min(2, (d.day - 1) // 10)
+        else:
+            self._dkd = dekad
+
+    @property
+    def year(self) -> int:
+        return self._dkd // 36
+
+    @property
+    def month(self) -> int:
+        return 1 + (self._dkd % 36) // 3
+
+    @property
+    def day(self) -> int:
+        return 1 + (self._dkd % 3) * 10
+
+    @property
+    def idx(self) -> int:
+        """Dekad index within a month: ``1,2,3``."""
+        return 1 + (self._dkd % 3)
+
+    @property
+    def raw(self) -> int:
+        return self._dkd
+
+    def __str__(self):
+        return f"{self.year:04d}{self.month:02d}d{self.idx}"
+
+    def __repr__(self):
+        return f'Dekad("{str(self)}")'
+
+    def __hash__(self):
+        return hash(self._dkd)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, str):
+            return str(self) == other
+        if isinstance(other, Dekad):
+            return self._dkd == other._dkd
+        return False
+
+    @property
+    def start_date(self) -> datetime:
+        return datetime(self.year, self.month, self.day)
+
+    @property
+    def end_date(self) -> datetime:
+        return (self + 1).start_date - timedelta(microseconds=1)
+
+    @property
+    def date_range(self) -> Tuple[datetime, datetime]:
+        return self.start_date, self.end_date
+
+    @property
+    def ndays(self) -> int:
+        """Number of days in dekad"""
+        return (self.end_date - self.start_date + timedelta(microseconds=1)).days
+
+    def __radd__(self, n: int) -> "Dekad":
+        return Dekad(self._dkd + n)
+
+    def __add__(self, n: int) -> "Dekad":
+        return Dekad(self._dkd + n)
+
+    @overload
+    def __sub__(self, other: int) -> "Dekad":
+        ...
+
+    @overload
+    def __sub__(self, other: "Dekad") -> int:
+        ...
+
+    def __sub__(self, other: Union[int, "Dekad"]) -> Union["Dekad", int]:
+        if isinstance(other, int):
+            return Dekad(self._dkd - other)
+        return self._dkd - other._dkd
