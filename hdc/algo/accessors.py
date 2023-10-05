@@ -10,6 +10,7 @@ import pandas as pd
 import xarray
 
 from . import ops
+from .dekad import Dekad
 
 __all__ = [
     "Anomalies",
@@ -79,49 +80,38 @@ class Period(AccessorTimeBase):
     """
 
     @property
+    def _tseries(self):
+        return self._obj.time.to_series()
+
+    @property
+    def idx(self):
+        return self._tseries.apply(lambda x: self._period_cls(x).idx).to_xarray()
+
+    @property
     def midx(self):
-        return (
-            self._obj.time.to_series()
-            .apply(lambda x: min(self.max_per_month, ((x.day - 1) // self.ndays) + 1))
-            .to_xarray()
+        warn(
+            """Please use `.idx` property (renaming for consistency).
+            The `.midx` property will be removed in a future release.""",
+            DeprecationWarning,
+            2,
         )
+        return self.idx
 
     @property
     def yidx(self):
-        return (
-            self._obj.time.to_series()
-            .apply(lambda x: ((x.month - 1) * self.max_per_month))
-            .to_xarray()
-            + self.midx
-        )
+        return self._tseries.apply(lambda x: self._period_cls(x).yidx).to_xarray()
 
     @property
     def label(self):
-        return (
-            self.year.astype("str")
-            .str.cat(self.month.astype("str").str.zfill(2))
-            .str.cat(self.midx.astype("str"), sep=self._label)
-        )
+        return self._tseries.apply(lambda x: str(self._period_cls(x))).to_xarray()
 
 
 @xarray.register_dataset_accessor("dekad")
 @xarray.register_dataarray_accessor("dekad")
-class Dekad(Period):
+class DekadPeriod(Period):
     """Accessor class for dekad period."""
 
-    ndays = 10
-    max_per_month = 3
-    _label = "d"
-
-
-@xarray.register_dataset_accessor("pentad")
-@xarray.register_dataarray_accessor("pentad")
-class Pentad(Period):
-    """Accessor class for pentad period."""
-
-    ndays = 5
-    max_per_month = 6
-    _label = "p"
+    _period_cls = Dekad
 
 
 class IterativeAggregation(AccessorBase):
