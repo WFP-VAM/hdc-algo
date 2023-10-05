@@ -16,7 +16,6 @@ __all__ = [
     "Anomalies",
     "Dekad",
     "IterativeAggregation",
-    "Pentad",
     "PixelAlgorithms",
     "WhittakerSmoother",
 ]
