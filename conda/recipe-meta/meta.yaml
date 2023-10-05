@@ -1,0 +1,40 @@
+{% set name = "hdc-algo" %}
+{% set data = load_setup_py_data() %}
+{% set version = os.environ.get("VERSION", "") or data.get("version").replace("-dev", ".dev") %}
+{% set build = os.environ.get("BUILD", "0") %}
+
+source:
+  path: ../../
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+build:
+  noarch: python
+  number: {{ build }}
+
+requirements:
+  host:
+    - python >=3.7
+    - hdc-algo-core {{ version }}
+  run:
+    - python >=3.7
+    - {{ pin_compatible('hdc-algo-core', max_pin='x.x.x') }}
+    - numba-scipy >=0.3.1
+    - scipy
+
+test:
+  imports:
+    - hdc.algo
+
+about:
+  home: https://github.com/WFP-VAM/hdc-algo/
+  summary: xarray tools for seasonal monitor
+  license: MIT
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - valpesendorfer
+    - Kirill888
