@@ -92,7 +92,7 @@ def test_gammafit(ts):
     assert parameters == pytest.approx((1.083449238500003, 0.9478709674697126))
 
 
-def test_spi(ts):
+def test_gammastd(ts):
     xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1))
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
@@ -101,7 +101,16 @@ def test_spi(ts):
     )
 
 
-def test_spi_nofit(ts):
+def test_gammastd(ts):
+    xspi = gammastd.py_func(ts, 0, 10)
+
+    np.testing.assert_array_equal(
+        (xspi * 1000).round(),
+        [-382.0, 1654.0, 588.0, 207.0, -1097.0, -1098.0, -1677.0, 1094.0, 213.0, 514.0],
+    )
+
+
+def test_gammastd_nofit(ts):
     xspi = gammastd.py_func(ts, 0, len(ts), a=1, b=2)
     xspi
     np.testing.assert_array_equal(
@@ -121,7 +130,7 @@ def test_spi_nofit(ts):
     )
 
 
-def test_spi_selfit(ts):
+def test_gammastd_selfit(ts):
     xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1), cal_start=0, cal_stop=3)
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
@@ -141,7 +150,7 @@ def test_spi_selfit(ts):
     )
 
 
-def test_spi_selfit_2(ts):
+def test_gammastd_selfit_2(ts):
     cal_start = 2
     cal_stop = 8
     a, b = gammafit.py_func(ts[cal_start:cal_stop])
