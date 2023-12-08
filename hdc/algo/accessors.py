@@ -444,12 +444,26 @@ class PixelAlgorithms(AccessorBase):
         self,
         calibration_start: Optional[str] = None,
         calibration_stop: Optional[str] = None,
+        groups: Optional[List[int]] = None,
     ):
-        """Calculate the SPI along the time dimension."""
+        """Calculate the SPI along the time dimension.
+
+        Calculates the Standardized Precipitation Index along the time dimension.
+        Optionally, a calibration start and / or stop date can be provided which
+        determine the part of the timeseries used to fit the gamma distribution.
+
+        `groups` can be supplied as list of group labels (attention, they are required
+        to be in format {0..n-1} where n is the number of unique groups.
+        If `groups` is supplied, the SPI will be computed for each individual group.
+        This is intended to be used when SPI should be calculated for specific timesteps.
+        """
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
 
-        from .ops.stats import gammastd_yxt  # pylint: disable=import-outside-toplevel
+        from .ops.stats import (
+            gammastd_yxt,
+            gammastd_grp,
+        )  # pylint: disable=import-outside-toplevel
 
         tix = self._obj.get_index("time")
 
@@ -479,17 +493,35 @@ class PixelAlgorithms(AccessorBase):
                 "Timeseries too short for calculating SPI. Please adjust calibration period!"
             )
 
-        res = xarray.apply_ufunc(
-            gammastd_yxt,
-            self._obj,
-            kwargs={
-                "cal_start": calstart_ix,
-                "cal_stop": calstop_ix,
-            },
-            input_core_dims=[["time"]],
-            output_core_dims=[["time"]],
-            dask="parallelized",
-        )
+        if groups is None:
+            res = xarray.apply_ufunc(
+                gammastd_yxt,
+                self._obj,
+                kwargs={
+                    "cal_start": calstart_ix,
+                    "cal_stop": calstop_ix,
+                },
+                input_core_dims=[["time"]],
+                output_core_dims=[["time"]],
+                dask="parallelized",
+            )
+
+        else:
+            groups = np.array(groups) if not isinstance(groups, np.ndarray) else groups
+            num_groups = np.unique(groups).size
+
+            res = xarray.apply_ufunc(
+                gammastd_grp,
+                self._obj,
+                groups,
+                num_groups,
+                calstart_ix,
+                calstop_ix,
+                input_core_dims=[["time"], ["grps"], [], [], []],
+                output_core_dims=[["time"]],
+                dask="parallelized",
+                dask_gufunc_kwargs={"meta": self._obj.data},
+            )
 
         res.attrs.update(
             {

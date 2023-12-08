@@ -1,7 +1,7 @@
 """Numba accelerated statistical funtions."""
 from math import erf, log, sqrt
 
-import numba
+from numba import guvectorize, njit
 import numba_scipy  # pylint: disable=unused-import
 import numpy as np
 import scipy.special as sc
@@ -9,7 +9,7 @@ import scipy.special as sc
 from ._helper import lazycompile
 
 
-@numba.njit
+@njit
 def brentq(xa, xb, s):
     """
     Root finding optimization using Brent's method.
@@ -106,7 +106,7 @@ def brentq(xa, xb, s):
     return xcur
 
 
-@numba.njit
+@njit
 def gammafit(x):
     # pylint: disable=line-too-long
     """
@@ -148,7 +148,7 @@ def gammafit(x):
     return (a, b)
 
 
-@numba.njit
+@njit
 def gammastd(x, cal_start, cal_stop, a=0, b=0):
     """Calculate a standardized index for observations based on fitted gamma distribution.
 
@@ -196,7 +196,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
     return y
 
 
-@numba.njit
+@njit
 def gammastd_yxt(
     x,
     cal_start=None,
@@ -229,7 +229,31 @@ def gammastd_yxt(
     return y
 
 
-@numba.njit
+@lazycompile(
+    guvectorize(
+        ["(float32[:], int16[:], float64, float64, float64, float32[:])"],
+        "(n),(m),(),(),() -> (n)",
+    )
+)
+def gammastd_grp(xx, groups, num_groups, cal_start, cal_stop, yy):
+    """Calculate the gammastd for specific groups.
+
+    This calculates gammastd across xx for indivual groups
+    defined in `groups`. These need to be in ascending order from
+    0 to num_groups - 1."""
+
+    for grp in range(num_groups):
+        grp_ix = groups == grp
+        pix = xx[grp_ix]
+        res = gammastd(pix, cal_start, cal_stop)
+        if (res != -9999).sum() > 0:
+            valid_ix = res != -9999
+            res[valid_ix] = res[valid_ix] * 1000
+            np.round_(res, 0, res)
+        yy[grp_ix] = res[:]
+
+
+@njit
 def mk_score(x):
     """Calculate MK score (S) and Kendall's Tau.
 
@@ -255,7 +279,7 @@ def mk_score(x):
     return s, tau
 
 
-@numba.njit
+@njit
 def mk_variance_s(x):
     """Mann-Kendall's variance S.
 
@@ -283,7 +307,7 @@ def mk_variance_s(x):
     return ((n * (n - 1) * (2 * n + 5)) - tp) / 18
 
 
-@numba.njit
+@njit
 def mk_z_score(s, vs):
     """Calculate Mann-Kendall's Z (MKZ).
 
@@ -302,7 +326,7 @@ def mk_z_score(s, vs):
     return 0
 
 
-@numba.njit
+@njit
 def mk_p_value(z, alpha=0.05):
     """Calculate Mann-Kendall's p value and significance.
 
@@ -318,7 +342,7 @@ def mk_p_value(z, alpha=0.05):
     return p, h
 
 
-@numba.njit
+@njit
 def mk_sens_slope(x):
     """Calculate Sen's slope and intercept for Mann-Kendall test.
 
@@ -341,7 +365,7 @@ def mk_sens_slope(x):
     return slope, intercept
 
 
-@numba.njit
+@njit
 def mann_kendall_trend_yxt(x):
     """Calculate Mann-Kendall trend over y, x, t array.
 
@@ -380,7 +404,7 @@ def mann_kendall_trend_yxt(x):
     return r
 
 
-@numba.njit
+@njit
 def mann_kendall_trend_1d(x):
     """Caluclate Mann-Kendall trend metric on 1-d array.
 
@@ -409,7 +433,7 @@ def mann_kendall_trend_1d(x):
 
 
 @lazycompile(
-    numba.guvectorize(
+    guvectorize(
         [
             "(int16[:], float64, float32[:], float32[:], float32[:], int8[:])",
             "(float32[:], float64, float32[:], float32[:], float32[:], int8[:])",
@@ -431,7 +455,7 @@ def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
 
 
 @lazycompile(
-    numba.guvectorize(
+    guvectorize(
         [
             "(int16[:], float32[:], float32[:], float32[:], int8[:])",
             "(float32[:], float32[:], float32[:], float32[:], int8[:])",

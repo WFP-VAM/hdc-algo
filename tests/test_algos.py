@@ -22,6 +22,7 @@ from hdc.algo.ops.stats import (
     gammafit,
     gammastd,
     gammastd_yxt,
+    gammastd_grp,
     mk_score,
     mk_p_value,
     mk_z_score,
@@ -157,6 +158,27 @@ def test_gammastd_selfit_2(ts):
     xspi_ref = gammastd.py_func(ts, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b)
     xspi = gammastd.py_func(ts, cal_start=cal_start, cal_stop=cal_stop)
     np.testing.assert_equal(xspi, xspi_ref)
+
+
+def test_gammastd_grp(ts):
+    tts = np.repeat(ts, 5).astype("float32")
+    grps = np.tile(np.arange(5), 10).astype("int16")
+    xspi = gammastd_grp(tts, grps, np.unique(grps).size, 0, 10)
+
+    res = [
+        -0.38238713,
+        1.6544422,
+        0.5879236,
+        0.20665395,
+        -1.0974495,
+        -1.0975538,
+        -1.6773673,
+        1.093621,
+        0.21322519,
+        0.5144766,
+    ]
+
+    np.testing.assert_almost_equal(xspi, np.repeat(res, 5))
 
 
 def test_ws2dgu(ts):

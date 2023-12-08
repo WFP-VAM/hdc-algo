@@ -145,6 +145,12 @@ def test_algo_spi(darr, res_spi):
     np.testing.assert_array_equal(_res, res_spi)
 
 
+def test_algo_spi_grouped(darr, res_spi):
+    _res = darr.astype("float32").hdc.algo.spi(groups=np.array([0] * 5, dtype="int16"))
+    assert isinstance(_res, xr.DataArray)
+    np.testing.assert_array_equal(_res, res_spi)
+
+
 def test_algo_spi_transp(darr, res_spi):
     _darr = darr.transpose(..., "time")
     _res = _darr.hdc.algo.spi()
