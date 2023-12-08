@@ -467,3 +467,28 @@ def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
 def _mann_kendall_trend_gu(x, tau, p, slope, trend):
     """Guvectorize wrapper for mann_kendall_trend_1d."""
     tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)
+
+
+@guvectorize(
+    ["(float32[:], int16[:], float64, float64, float32[:])"], "(n),(m),(),() -> (n)"
+)
+def mean_grp(xx, groups, num_groups, nodata, yy):
+    """Calculate grouped mean."""
+    for grp in range(num_groups):
+        grp_ix = groups == grp
+        pix = xx[grp_ix]
+        n = 0
+        for pixv in pix:
+            if pixv == nodata:
+                continue
+            if n == 0:
+                avg = pixv
+            else:
+                avg += pixv
+            n += 1
+        if n == 0:
+            avg = nodata
+        else:
+            avg = avg / n
+
+        yy[grp_ix] = avg

@@ -23,6 +23,7 @@ from hdc.algo.ops.stats import (
     gammastd,
     gammastd_yxt,
     gammastd_grp,
+    mean_grp,
     mk_score,
     mk_p_value,
     mk_z_score,
@@ -178,7 +179,14 @@ def test_gammastd_grp(ts):
         0.5144766,
     ]
 
-    np.testing.assert_almost_equal(xspi, np.repeat(res, 5))
+    np.testing.assert_almost_equal(xspi, (np.repeat(res, 5) * 1000).round())
+
+
+def test_mean_grp(ts):
+    tts = np.repeat(ts, 5).astype("float32")
+    grps = np.tile(np.arange(5), 10).astype("int16")
+    res = mean_grp(tts, grps, np.unique(grps).size, 0)
+    assert (res == 1.02697).all()
 
 
 def test_ws2dgu(ts):
