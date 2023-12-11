@@ -640,6 +640,26 @@ class PixelAlgorithms(AccessorBase):
         return x
 
 
+class RollingWindowAlgos(AccessorBase):
+    """Class to calculate rolling window algos on dimenson."""
+
+    def sum(self, window_size: int, dimension: str = "time"):
+        # pylint: disable=import-outside-toplevel
+        from .ops.stats import rolling_sum
+
+        xx = xarray.apply_ufunc(
+            rolling_sum,
+            self._obj,
+            window_size,
+            input_core_dims=[[dimension], []],
+            output_core_dims=[[dimension]],
+            dask="parallelized",
+            dask_gufunc_kwargs={"meta": self._obj.data},
+        )
+        xx = xx[..., window_size - 1 :]
+        return xx
+
+
 class ZonalStatistics(AccessorBase):
     """Class to claculate zonal statistics."""
 
@@ -736,5 +756,6 @@ class HDC:
         self.algo = PixelAlgorithms(xarray_obj)
         self.anom = Anomalies(xarray_obj)
         self.iteragg = IterativeAggregation(xarray_obj)
+        self.rolling = RollingWindowAlgos(xarray_obj)
         self.whit = WhittakerSmoother(xarray_obj)
         self.zonal = ZonalStatistics(xarray_obj)

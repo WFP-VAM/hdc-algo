@@ -995,3 +995,10 @@ def test_zonal_type_exc(darr, zones):
     z_ids = np.unique(zones.data)
     with pytest.raises(ValueError):
         _ = darr.hdc.zonal.mean(zones.data, z_ids)
+
+
+def test_rolling_sum(darr):
+    xr.testing.assert_allclose(
+        darr.hdc.rolling.sum(window_size=3).transpose("time", ...),
+        darr.rolling(time=3).sum().dropna("time"),
+    )
