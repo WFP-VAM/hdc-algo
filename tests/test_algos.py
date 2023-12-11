@@ -30,6 +30,7 @@ from hdc.algo.ops.stats import (
     mk_variance_s,
     mk_sens_slope,
     mann_kendall_trend_1d,
+    rolling_sum,
 )
 
 
@@ -187,6 +188,16 @@ def test_mean_grp(ts):
     grps = np.tile(np.arange(5), 10).astype("int16")
     res = mean_grp(tts, grps, np.unique(grps).size, 0)
     assert (res == 1.02697).all()
+
+
+def test_rolling_sum():
+    res = rolling_sum(np.arange(10).astype("float32"), 3)
+    np.testing.assert_almost_equal(
+        res,
+        np.array(
+            [0.0, 0.0, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0], dtype="float32"
+        ),
+    )
 
 
 def test_ws2dgu(ts):

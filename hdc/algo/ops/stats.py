@@ -240,8 +240,8 @@ def gammastd_grp(xx, groups, num_groups, cal_start, cal_stop, yy):
 
     This calculates gammastd across xx for indivual groups
     defined in `groups`. These need to be in ascending order from
-    0 to num_groups - 1."""
-
+    0 to num_groups - 1.
+    """
     for grp in range(num_groups):
         grp_ix = groups == grp
         pix = xx[grp_ix]
@@ -492,3 +492,17 @@ def mean_grp(xx, groups, num_groups, nodata, yy):
             avg = avg / n
 
         yy[grp_ix] = avg
+
+
+@guvectorize(["(float32[:], float64, float32[:])"], "(n),() -> (n)")
+def rolling_sum(xx, window_size, yy):
+    """Calculate moving window sum over specified size."""
+    n = xx.size
+    yy[:] = 0.0
+    for ii in range(n):
+        if ii - window_size + 1 < 0:
+            yy[ii] = 0.0
+            continue
+
+        for jj in range(ii - window_size + 1, ii + 1):
+            yy[ii] += xx[jj]

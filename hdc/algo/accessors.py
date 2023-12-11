@@ -1,5 +1,5 @@
 """Xarray Accesor classes."""
-from typing import List, Optional, Union
+from typing import Iterable, List, Optional, Union
 from warnings import warn
 
 from dask import is_dask_collection
@@ -444,7 +444,7 @@ class PixelAlgorithms(AccessorBase):
         self,
         calibration_start: Optional[str] = None,
         calibration_stop: Optional[str] = None,
-        groups: Optional[List[int]] = None,
+        groups: Optional[Iterable[int]] = None,
     ):
         """Calculate the SPI along the time dimension.
 
@@ -460,10 +460,11 @@ class PixelAlgorithms(AccessorBase):
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
 
+        # pylint: disable=import-outside-toplevel
         from .ops.stats import (
             gammastd_yxt,
             gammastd_grp,
-        )  # pylint: disable=import-outside-toplevel
+        )
 
         tix = self._obj.get_index("time")
 
