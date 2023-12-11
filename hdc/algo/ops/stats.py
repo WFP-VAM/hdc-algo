@@ -494,7 +494,14 @@ def mean_grp(xx, groups, num_groups, nodata, yy):
         yy[grp_ix] = avg
 
 
-@guvectorize(["(float32[:], float64, float32[:])"], "(n),() -> (n)")
+@guvectorize(
+    [
+        "(float32[:], float64, float32[:])",
+        "(int16[:], float64, float32[:])",
+        "(int64[:], float64, float32[:])",
+    ],
+    "(n),() -> (n)",
+)
 def rolling_sum(xx, window_size, yy):
     """Calculate moving window sum over specified size."""
     n = xx.size
