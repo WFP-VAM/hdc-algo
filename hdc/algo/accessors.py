@@ -684,6 +684,7 @@ class PixelAlgorithms(AccessorBase):
             nodata,
             input_core_dims=[["time"], ["grps"], [], []],
             output_core_dims=[["time"]],
+            keep_attrs=True,
             dask="parallelized",
             dask_gufunc_kwargs={"meta": self._obj.data},
         )
@@ -702,6 +703,7 @@ class RollingWindowAlgos(AccessorBase):
             window_size,
             input_core_dims=[[dimension], []],
             output_core_dims=[[dimension]],
+            keep_attrs=True,
             dask="parallelized",
             dask_gufunc_kwargs={"meta": self._obj.data},
         )
