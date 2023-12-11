@@ -470,7 +470,13 @@ def _mann_kendall_trend_gu(x, tau, p, slope, trend):
 
 
 @guvectorize(
-    ["(float32[:], int16[:], float64, float64, float32[:])"], "(n),(m),(),() -> (n)"
+    [
+        "(float32[:], int16[:], float64, float64, float32[:])",
+        "(int16[:], int16[:], float64, float64, float32[:])",
+        "(int32[:], int16[:], float64, float64, float32[:])",
+        "(int64[:], int16[:], float64, float64, float32[:])",
+    ],
+    "(n),(m),(),() -> (n)",
 )
 def mean_grp(xx, groups, num_groups, nodata, yy):
     """Calculate grouped mean."""

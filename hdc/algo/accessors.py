@@ -639,6 +639,55 @@ class PixelAlgorithms(AccessorBase):
         x.trend.attrs["nodata"] = -2
         return x
 
+    def mean_grp(
+        self,
+        groups: Iterable[int],
+        nodata: Optional[Union[int, float]] = None,
+    ):
+        """Calculate mean over groups along time dimension.
+
+        This calculates a simple average over groups along the time
+        dimension. The groups are identified by an int16 array, and
+        the **need to be in ascending order from 0 to n-1**!
+
+        The function will return an array of original size with averages
+        at the respective positions.
+        """
+        if not self._check_for_timedim():
+            raise MissingTimeError("Grouped mean requires a time dimension!")
+
+        # pylint: disable=import-outside-toplevel
+        from .ops.stats import mean_grp
+
+        if nodata is None:
+            nodata = self._obj.attrs.get("nodata", None)
+
+        if nodata is None:
+            raise ValueError("Need to define nodata value!")
+
+        groups = (
+            np.array(groups, dtype="int16")
+            if not isinstance(groups, np.ndarray)
+            else groups
+        )
+
+        if groups.size != self._obj.time.size:
+            raise ValueError("Need array of groups same length as time dimension!")
+
+        num_groups = np.unique(groups).size
+
+        return xarray.apply_ufunc(
+            mean_grp,
+            self._obj,
+            groups,
+            num_groups,
+            nodata,
+            input_core_dims=[["time"], ["grps"], [], []],
+            output_core_dims=[["time"]],
+            dask="parallelized",
+            dask_gufunc_kwargs={"meta": self._obj.data},
+        )
+
 
 class RollingWindowAlgos(AccessorBase):
     """Class to calculate rolling window algos on dimenson."""

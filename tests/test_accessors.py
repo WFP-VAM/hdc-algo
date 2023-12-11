@@ -1002,3 +1002,24 @@ def test_rolling_sum(darr):
         darr.hdc.rolling.sum(window_size=3).transpose("time", ...),
         darr.rolling(time=3).sum().dropna("time"),
     )
+
+
+def test_mean_grp(darr):
+    grps = np.array([0, 0, 1, 1, 2], dtype="int16")
+    tst = darr.hdc.algo.mean_grp(grps)[..., [0, 2, 4]]
+    cntrl = (
+        darr.groupby(xr.DataArray(grps, dims=("time",))).mean().transpose(..., "group")
+    )
+
+    np.testing.assert_allclose(tst.data, cntrl.data)
+
+
+def test_mean_grp_exc(darr):
+    grps = np.array([0, 0, 1, 1, 2], dtype="int16")
+    _darr = darr.copy()
+    _ = _darr.attrs.pop("nodata")
+    with pytest.raises(ValueError):
+        _darr.hdc.algo.mean_grp(grps)
+
+    with pytest.raises(MissingTimeError):
+        darr.rename(time="foo").hdc.algo.mean_grp(grps)
