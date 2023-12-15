@@ -504,6 +504,7 @@ class PixelAlgorithms(AccessorBase):
                 },
                 input_core_dims=[["time"]],
                 output_core_dims=[["time"]],
+                keep_attrs=True,
                 dask="parallelized",
             )
 
@@ -520,6 +521,7 @@ class PixelAlgorithms(AccessorBase):
                 calstop_ix,
                 input_core_dims=[["time"], ["grps"], [], [], []],
                 output_core_dims=[["time"]],
+                keep_attrs=True,
                 dask="parallelized",
                 dask_gufunc_kwargs={"meta": self._obj.data},
             )
@@ -556,6 +558,7 @@ class PixelAlgorithms(AccessorBase):
             input_core_dims=[["time"]],
             dask="parallelized",
             output_dtypes=["uint8"],
+            keep_attrs=True,
         )
 
     def autocorr(self):
