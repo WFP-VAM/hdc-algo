@@ -894,7 +894,7 @@ def test_zonal_mean(darr, zones):
                 [[63.0, 2.0], [16.0, 2.0]],
             ]
         ),
-        dtype="float64",
+        dtype="float32",
     )
 
     z_ids = np.unique(zones.data)
@@ -903,6 +903,7 @@ def test_zonal_mean(darr, zones):
     np.testing.assert_equal(x.coords["zones"].data, [0, 1])
     assert list(x.coords["stat"].values) == ["mean", "valid"]
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_mean_nodata(darr, zones):
@@ -914,7 +915,7 @@ def test_zonal_mean_nodata(darr, zones):
             [[28.0, 2.0], [12.0, 2.0]],
             [[63.0, 2.0], [16.0, 2.0]],
         ],
-        dtype="float64",
+        dtype="float32",
     )
 
     darr[0, 0, 0] = darr.nodata
@@ -922,6 +923,7 @@ def test_zonal_mean_nodata(darr, zones):
     z_ids = np.unique(zones.data)
     x = darr.hdc.zonal.mean(zones, z_ids)
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_mean_nodata_nan(darr, zones):
@@ -949,8 +951,9 @@ def test_zonal_mean_nodata_nan_float(darr, zones):
     darr[0, 0, 0] = "nan"
 
     z_ids = np.unique(zones.data)
-    x = darr.hdc.zonal.mean(zones, z_ids)
+    x = darr.hdc.zonal.mean(zones, z_ids, dtype="float64")
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_zone_nodata_nan(darr, zones):
@@ -967,13 +970,14 @@ def test_zonal_zone_nodata_nan(darr, zones):
 
     zones.attrs = {"nodata": 0}
     z_ids = np.unique(zones.data)
-    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo")
+    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo", dtype="float64")
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_dimname(darr, zones):
     z_ids = np.unique(zones.data)
-    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo")
+    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo", dtype="float64")
     assert x.dims == ("time", "foo", "stat")
 
 

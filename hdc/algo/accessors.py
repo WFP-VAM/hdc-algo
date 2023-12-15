@@ -718,7 +718,7 @@ class ZonalStatistics(AccessorBase):
         self,
         zones: xarray.DataArray,
         zone_ids: Union[List, np.ndarray],
-        dtype: str = "float64",
+        dtype: str = "float32",
         dim_name: str = "zones",
         name: Optional[str] = None,
     ) -> xarray.DataArray:
@@ -764,6 +764,9 @@ class ZonalStatistics(AccessorBase):
             "stat": ["mean", "valid"],
         }
 
+        # convert str datatype to type
+        dtype = np.dtype(dtype).type
+
         if is_dask_collection(xx):
             dask_name = name
             if isinstance(dask_name, str):
@@ -781,7 +784,7 @@ class ZonalStatistics(AccessorBase):
                 drop_axis=[1, 2],
                 new_axis=[1, 2],
                 chunks=chunks,
-                dtype=dtype,
+                out_dtype=dtype,
                 name=dask_name,
             )
         else:
@@ -791,6 +794,7 @@ class ZonalStatistics(AccessorBase):
                 num_zones,
                 xx.nodata,
                 zones.nodata,
+                out_dtype=dtype,
             )
 
         return xarray.DataArray(
