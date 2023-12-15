@@ -469,14 +469,16 @@ def _mann_kendall_trend_gu(x, tau, p, slope, trend):
     tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)
 
 
-@guvectorize(
-    [
-        "(float32[:], int16[:], float64, float64, float32[:])",
-        "(int16[:], int16[:], float64, float64, float32[:])",
-        "(int32[:], int16[:], float64, float64, float32[:])",
-        "(int64[:], int16[:], float64, float64, float32[:])",
-    ],
-    "(n),(m),(),() -> (n)",
+@lazycompile(
+    guvectorize(
+        [
+            "(float32[:], int16[:], float64, float64, float32[:])",
+            "(int16[:], int16[:], float64, float64, float32[:])",
+            "(int32[:], int16[:], float64, float64, float32[:])",
+            "(int64[:], int16[:], float64, float64, float32[:])",
+        ],
+        "(n),(m),(),() -> (n)",
+    )
 )
 def mean_grp(xx, groups, num_groups, nodata, yy):
     """Calculate grouped mean."""
@@ -500,13 +502,15 @@ def mean_grp(xx, groups, num_groups, nodata, yy):
         yy[grp_ix] = avg
 
 
-@guvectorize(
-    [
-        "(float32[:], float64, float32[:])",
-        "(int16[:], float64, float32[:])",
-        "(int64[:], float64, float32[:])",
-    ],
-    "(n),() -> (n)",
+@lazycompile(
+    guvectorize(
+        [
+            "(float32[:], float64, float32[:])",
+            "(int16[:], float64, float32[:])",
+            "(int64[:], float64, float32[:])",
+        ],
+        "(n),() -> (n)",
+    )
 )
 def rolling_sum(xx, window_size, yy):
     """Calculate moving window sum over specified size."""
