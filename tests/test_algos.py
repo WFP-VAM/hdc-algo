@@ -191,7 +191,7 @@ def test_mean_grp(ts):
 
 
 def test_rolling_sum():
-    res = rolling_sum(np.arange(10).astype("float32"), 3)
+    res = rolling_sum(np.arange(10).astype("float32"), 3, 0)
     np.testing.assert_almost_equal(
         res,
         np.array(

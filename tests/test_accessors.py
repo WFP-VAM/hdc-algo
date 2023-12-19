@@ -1008,6 +1008,14 @@ def test_rolling_sum(darr):
     )
 
 
+def test_rolling_sum_nodata(darr):
+    darr[:, 0, 0] = -9999
+    xr.testing.assert_allclose(
+        darr.hdc.rolling.sum(3, nodata=-9999).transpose("time", ...),
+        darr.rolling(time=3).sum().where(darr != -9999, -9999).dropna("time"),
+    )
+
+
 def test_mean_grp(darr):
     grps = np.array([0, 0, 1, 1, 2], dtype="int16")
     tst = darr.hdc.algo.mean_grp(grps)[..., [0, 2, 4]]

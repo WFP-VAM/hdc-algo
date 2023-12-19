@@ -505,21 +505,24 @@ def mean_grp(xx, groups, num_groups, nodata, yy):
 @lazycompile(
     guvectorize(
         [
-            "(float32[:], float64, float32[:])",
-            "(int16[:], float64, float32[:])",
-            "(int64[:], float64, float32[:])",
+            "(float32[:], float64, float64, float32[:])",
+            "(int16[:], float64, float64, float32[:])",
+            "(int64[:], float64, float64, float32[:])",
         ],
-        "(n),() -> (n)",
+        "(n),(),() -> (n)",
     )
 )
-def rolling_sum(xx, window_size, yy):
+def rolling_sum(xx, window_size, nodata, yy):
     """Calculate moving window sum over specified size."""
     n = xx.size
-    yy[:] = 0.0
+    yy[:] = 0
     for ii in range(n):
         if ii - window_size + 1 < 0:
-            yy[ii] = 0.0
+            yy[ii] = nodata
             continue
 
         for jj in range(ii - window_size + 1, ii + 1):
+            if xx[jj] == nodata:
+                yy[ii] = nodata
+                continue
             yy[ii] += xx[jj]

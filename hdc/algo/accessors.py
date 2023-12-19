@@ -696,19 +696,32 @@ class PixelAlgorithms(AccessorBase):
 class RollingWindowAlgos(AccessorBase):
     """Class to calculate rolling window algos on dimenson."""
 
-    def sum(self, window_size: int, dimension: str = "time"):
+    def sum(
+        self,
+        window_size: int,
+        dtype: str = "float32",
+        dimension: str = "time",
+        nodata: Optional[Union[int, float]] = None,
+    ):
         # pylint: disable=import-outside-toplevel
         from .ops.stats import rolling_sum
+
+        if nodata is None:
+            if (nodata := self._obj.attrs.get("nodata")) is None:
+                raise ValueError(
+                    "Need nodata attribute defined, or nodata arument provided."
+                )
 
         xx = xarray.apply_ufunc(
             rolling_sum,
             self._obj,
             window_size,
-            input_core_dims=[[dimension], []],
+            nodata,
+            input_core_dims=[[dimension], [], []],
             output_core_dims=[[dimension]],
             keep_attrs=True,
             dask="parallelized",
-            dask_gufunc_kwargs={"meta": self._obj.data},
+            dask_gufunc_kwargs={"meta": self._obj.astype(dtype).data},
         )
         xx = xx[..., window_size - 1 :]
         return xx
