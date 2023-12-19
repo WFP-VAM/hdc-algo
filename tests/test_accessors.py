@@ -73,6 +73,13 @@ def test_period_yidx_dekad(darr):
     np.testing.assert_array_equal(darr.time.dekad.yidx, [1, 2, 3, 3, 4])
 
 
+def test_period_ndays_dekad(darr):
+    assert isinstance(darr.time.dekad.ndays, xr.DataArray)
+    np.testing.assert_equal(
+        darr.time.dekad.ndays.values, np.array([10, 10, 11, 11, 10])
+    )
+
+
 def test_period_labels_dekad(darr):
     assert isinstance(darr.time.dekad.label, xr.DataArray)
     np.testing.assert_array_equal(

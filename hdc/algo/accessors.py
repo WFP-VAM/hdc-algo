@@ -101,6 +101,10 @@ class Period(AccessorTimeBase):
         return self._tseries.apply(lambda x: self._period_cls(x).yidx).to_xarray()
 
     @property
+    def ndays(self):
+        return self._tseries.apply(lambda x: self._period_cls(x).ndays).to_xarray()
+
+    @property
     def label(self):
         return self._tseries.apply(lambda x: str(self._period_cls(x))).to_xarray()
 
