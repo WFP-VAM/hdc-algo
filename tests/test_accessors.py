@@ -1016,15 +1016,17 @@ def test_zonal_type_exc(darr, zones):
 
 
 def test_rolling_sum(darr):
-    xr.testing.assert_allclose(
-        darr.hdc.rolling.sum(window_size=3).transpose("time", ...),
+    res = darr.hdc.rolling.sum(window_size=3).transpose("time", ...)
+    xr.testing.assert_equal(
+        res,
         darr.rolling(time=3).sum().dropna("time"),
     )
+    np.testing.assert_equal(darr[-3:].sum("time").data, res[-1].data)
 
 
 def test_rolling_sum_nodata(darr):
     darr[:, 0, 0] = -9999
-    xr.testing.assert_allclose(
+    xr.testing.assert_equal(
         darr.hdc.rolling.sum(3, nodata=-9999).transpose("time", ...),
         darr.rolling(time=3).sum().where(darr != -9999, -9999).dropna("time"),
     )

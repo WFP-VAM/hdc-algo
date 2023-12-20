@@ -149,7 +149,7 @@ def gammafit(x):
 
 
 @njit
-def gammastd(x, cal_start, cal_stop, a=0, b=0):
+def gammastd(x, nodata, cal_start, cal_stop, a=0, b=0):
     """Calculate a standardized index for observations based on fitted gamma distribution.
 
     The standardized index are anomalies relative to a variable's statistics
@@ -173,7 +173,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
     p_zero = 1 - (n_valid / t)
 
     if p_zero > 0.9:
-        return np.full_like(x, -9999, dtype="float64")
+        return np.full_like(x, nodata, dtype="float64")
 
     if (a == 0) and (b == 0):
         alpha, beta = gammafit(x[cal_start:cal_stop])
@@ -181,7 +181,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
         alpha, beta = (a, b)
 
     if alpha == 0 or beta == 0:
-        return np.full_like(x, -9999, dtype="float64")
+        return np.full_like(x, nodata, dtype="float64")
 
     y = np.full(t, p_zero, dtype="float64")  # type: ignore
 
@@ -199,7 +199,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
 @njit
 def gammastd_yxt(
     x,
-    nodata=None,
+    nodata,
     cal_start=None,
     cal_stop=None,
 ):
@@ -209,7 +209,6 @@ def gammastd_yxt(
     of the array with the assumption the time dimension is the last one.
     The outputs are scaled by 1000 and cast to in16.
     """
-    y = np.full_like(x, -9999, dtype="int16")
     r, c, t = x.shape
 
     if cal_start is None:
@@ -218,17 +217,16 @@ def gammastd_yxt(
     if cal_stop is None:
         cal_stop = t
 
-    if nodata is None:
-        nodata = -9999
+    y = np.full_like(x, nodata, dtype="int16")
 
     for ri in range(r):
         for ci in range(c):
             xt = x[ri, ci, :]
             if (xt != nodata).sum() == 0:
-                y[ri, ci, :] = -9999
+                y[ri, ci, :] = nodata
                 continue
-            s = gammastd(xt, cal_start, cal_stop)
-            if (s != -9999).sum() > 0:
+            s = gammastd(xt, nodata, cal_start, cal_stop)
+            if (s != nodata).sum() > 0:
                 s = s * 1000
                 np.round_(s, 0, s)
                 y[ri, ci, :] = s[:]
@@ -256,11 +254,11 @@ def gammastd_grp(xx, groups, num_groups, nodata, cal_start, cal_stop, yy):
         grp_ix = groups == grp
         pix = xx[grp_ix]
         if (pix != nodata).sum() == 0:
-            yy[grp_ix] = -9999
+            yy[grp_ix] = nodata
             continue
-        res = gammastd(pix, cal_start, cal_stop)
-        if (res != -9999).sum() > 0:
-            valid_ix = res != -9999
+        res = gammastd(pix, nodata, cal_start, cal_stop)
+        if (res != nodata).sum() > 0:
+            valid_ix = res != nodata
             res[valid_ix] = res[valid_ix] * 1000
             np.round_(res, 0, res)
         yy[grp_ix] = res[:]
