@@ -448,6 +448,7 @@ class PixelAlgorithms(AccessorBase):
         self,
         calibration_start: Optional[str] = None,
         calibration_stop: Optional[str] = None,
+        nodata: Optional[Union[float, int]] = None,
         groups: Optional[Iterable[int]] = None,
     ):
         """Calculate the SPI along the time dimension.
@@ -463,6 +464,12 @@ class PixelAlgorithms(AccessorBase):
         """
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
+
+        if nodata is None:
+            if (nodata := self._obj.attrs.get("nodata")) is None:
+                raise ValueError(
+                    "Need nodata attribute defined, or nodata argument provided."
+                )
 
         # pylint: disable=import-outside-toplevel
         from .ops.stats import (
@@ -503,6 +510,7 @@ class PixelAlgorithms(AccessorBase):
                 gammastd_yxt,
                 self._obj,
                 kwargs={
+                    "nodata": nodata,
                     "cal_start": calstart_ix,
                     "cal_stop": calstop_ix,
                 },
@@ -521,9 +529,10 @@ class PixelAlgorithms(AccessorBase):
                 self._obj,
                 groups,
                 num_groups,
+                nodata,
                 calstart_ix,
                 calstop_ix,
-                input_core_dims=[["time"], ["grps"], [], [], []],
+                input_core_dims=[["time"], ["grps"], [], [], [], []],
                 output_core_dims=[["time"]],
                 keep_attrs=True,
                 dask="parallelized",
@@ -573,8 +582,7 @@ class PixelAlgorithms(AccessorBase):
             xarray.DataArray with lag1 autocorrelation
         """
         xx = self._obj
-        nodata = xx.attrs.get("nodata", None)
-        if nodata is None:
+        if (nodata := xx.attrs.get("nodata", None)) is None:
             warn("Calculating autocorr without nodata value defined!")
         if xx.dims[0] == "time":
             # I don't know how to tell xarray's map_blocks about
@@ -713,7 +721,7 @@ class RollingWindowAlgos(AccessorBase):
         if nodata is None:
             if (nodata := self._obj.attrs.get("nodata")) is None:
                 raise ValueError(
-                    "Need nodata attribute defined, or nodata arument provided."
+                    "Need nodata attribute defined, or nodata argument provided."
                 )
 
         xx = xarray.apply_ufunc(

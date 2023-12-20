@@ -199,6 +199,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
 @njit
 def gammastd_yxt(
     x,
+    nodata=None,
     cal_start=None,
     cal_stop=None,
 ):
@@ -217,9 +218,15 @@ def gammastd_yxt(
     if cal_stop is None:
         cal_stop = t
 
+    if nodata is None:
+        nodata = -9999
+
     for ri in range(r):
         for ci in range(c):
             xt = x[ri, ci, :]
+            if (xt != nodata).sum() == 0:
+                y[ri, ci, :] = -9999
+                continue
             s = gammastd(xt, cal_start, cal_stop)
             if (s != -9999).sum() > 0:
                 s = s * 1000
@@ -231,11 +238,14 @@ def gammastd_yxt(
 
 @lazycompile(
     guvectorize(
-        ["(float32[:], int16[:], float64, float64, float64, float32[:])"],
-        "(n),(m),(),(),() -> (n)",
+        [
+            "(int16[:], int16[:], float64, float64, float64, float64, int16[:])",
+            "(float32[:], int16[:], float64, float64, float64, float64, int16[:])",
+        ],
+        "(n),(m),(),(),(),() -> (n)",
     )
 )
-def gammastd_grp(xx, groups, num_groups, cal_start, cal_stop, yy):
+def gammastd_grp(xx, groups, num_groups, nodata, cal_start, cal_stop, yy):
     """Calculate the gammastd for specific groups.
 
     This calculates gammastd across xx for indivual groups
@@ -245,6 +255,9 @@ def gammastd_grp(xx, groups, num_groups, cal_start, cal_stop, yy):
     for grp in range(num_groups):
         grp_ix = groups == grp
         pix = xx[grp_ix]
+        if (pix != nodata).sum() == 0:
+            yy[grp_ix] = -9999
+            continue
         res = gammastd(pix, cal_start, cal_stop)
         if (res != -9999).sum() > 0:
             valid_ix = res != -9999

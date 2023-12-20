@@ -229,6 +229,13 @@ def test_algo_spi_decoupled_3(darr):
     assert _res.attrs["spi_calibration_stop"] == "2000-02-10"
 
 
+def test_algo_spi_nodata(darr):
+    _ = darr.attrs.pop("nodata")
+    with pytest.raises(ValueError):
+        _ = darr.hdc.algo.spi()
+    _ = darr.hdc.algo.spi(nodata=-9999)
+
+
 def test_algo_spi_decoupled_err_1(darr):
     with pytest.raises(ValueError):
         _res = darr.hdc.algo.spi(
