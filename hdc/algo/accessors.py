@@ -524,6 +524,10 @@ class PixelAlgorithms(AccessorBase):
             groups = np.array(groups) if not isinstance(groups, np.ndarray) else groups
             num_groups = np.unique(groups).size
 
+            if not groups.dtype.name == "int16":
+                warn("Casting groups to int16!")
+                groups = groups.astype("int16")
+
             res = xarray.apply_ufunc(
                 gammastd_grp,
                 self._obj,
