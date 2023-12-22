@@ -450,6 +450,7 @@ class PixelAlgorithms(AccessorBase):
         calibration_stop: Optional[str] = None,
         nodata: Optional[Union[float, int]] = None,
         groups: Optional[Iterable[int]] = None,
+        dtype="int16",
     ):
         """Calculate the SPI along the time dimension.
 
@@ -518,6 +519,7 @@ class PixelAlgorithms(AccessorBase):
                 output_core_dims=[["time"]],
                 keep_attrs=True,
                 dask="parallelized",
+                dask_gufunc_kwargs={"meta": self._obj.data.astype(dtype)},
             )
 
         else:
@@ -540,7 +542,7 @@ class PixelAlgorithms(AccessorBase):
                 output_core_dims=[["time"]],
                 keep_attrs=True,
                 dask="parallelized",
-                dask_gufunc_kwargs={"meta": self._obj.data},
+                dask_gufunc_kwargs={"meta": self._obj.data.astype(dtype)},
             )
 
         res.attrs.update(
