@@ -16,7 +16,7 @@ try:
 except ImportError:
     from numba.errors import NumbaWarning
 
-    class NumbaExperimentalFeatureWarning(NumbaWarning):
+    class NumbaExperimentalFeatureWarning(NumbaWarning):  # type: ignore
         pass
 
 
