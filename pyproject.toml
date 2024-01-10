@@ -26,11 +26,20 @@ exclude = '''
   | _build
   | build
   | dist
+  | hdc/algo/vendor
 )/
 '''
 
 [tool.isort]
 profile = "black"
+
+[tool.pylint.main]
+ignore-paths = [
+   "hdc/algo/vendor/*"
+]
+extension-pkg-allow-list = [
+  "scipy.special"
+]
 
 [tool.pylint.messages_control]
 max-line-length = 99
@@ -49,3 +58,6 @@ disable = [
   "wrong-import-order",
   "unnecessary-lambda-assignment",
 ]
+
+[tool.pydocstyle]
+match-dir = "(?!vendor).*"
