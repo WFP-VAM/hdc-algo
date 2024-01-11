@@ -1,6 +1,6 @@
 # Setup instructions:
 #   > mamba env create -f dev-env.yml
-#   > conda activate vam-hdc-algo
+#   > conda activate hdc-algo
 #   > pip install -e .
 #   > pytest -s tests/
 name: hdc-algo
@@ -8,8 +8,8 @@ channels:
   - conda-forge
 
 dependencies:
-  - python =3.9
-  - pip =20
+  - python =3.10
+  - pip =23
 
   # hdc-algo dependencies
   - xarray
@@ -17,7 +17,6 @@ dependencies:
   - numba
   - dask[array]
   - scipy
-  - numba-scipy >=0.3.0
 
   # tests and dev
   ## to use from jupyter-lab: `python -m ipykernel install --user --name vam-seasmon`
@@ -33,10 +32,6 @@ dependencies:
   - pycodestyle
   - pylint
   - docutils
-  ### shed dependencies
-  - pyyaml
-  - pyupgrade
-  - libcst
 
   ## test
   - pytest

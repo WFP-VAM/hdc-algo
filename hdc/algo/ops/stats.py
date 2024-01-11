@@ -1,12 +1,15 @@
 """Numba accelerated statistical funtions."""
 from math import erf, log, sqrt
 
+
 from numba import guvectorize, njit
-import numba_scipy  # pylint: disable=unused-import
 import numpy as np
 import scipy.special as sc
 
+from ..vendor.numba_scipy import _init_extension
 from ._helper import lazycompile
+
+_init_extension()
 
 
 @njit
