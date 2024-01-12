@@ -79,6 +79,14 @@ class Dekad:
             return self._dkd == other._dkd
         return False
 
+    def __lt__(self, other: object) -> bool:
+        """Check for less than inequality with other Dekad or a string."""
+        if isinstance(other, str):
+            return str(self) < other
+        if isinstance(other, Dekad):
+            return self._dkd < other._dkd
+        return False
+
     @property
     def start_date(self) -> datetime:
         """Start date as python ``datetime``."""
