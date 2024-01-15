@@ -108,6 +108,18 @@ class Period(AccessorTimeBase):
     def label(self):
         return self._tseries.apply(lambda x: str(self._period_cls(x))).to_xarray()
 
+    @property
+    def start_date(self):
+        return self._tseries.apply(lambda x: self._period_cls(x).start_date).to_xarray()
+
+    @property
+    def end_date(self):
+        return self._tseries.apply(lambda x: self._period_cls(x).end_date).to_xarray()
+
+    @property
+    def raw(self):
+        return self._tseries.apply(lambda x: self._period_cls(x).raw).to_xarray()
+
 
 @xarray.register_dataset_accessor("dekad")
 @xarray.register_dataarray_accessor("dekad")

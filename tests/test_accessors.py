@@ -80,6 +80,47 @@ def test_period_ndays_dekad(darr):
     )
 
 
+def test_period_start_date_dekad(darr):
+    assert isinstance(darr.time.dekad.start_date, xr.DataArray)
+    np.testing.assert_equal(
+        darr.time.dekad.start_date.values,
+        np.array(
+            [
+                "2000-01-01T00:00:00.000000000",
+                "2000-01-11T00:00:00.000000000",
+                "2000-01-21T00:00:00.000000000",
+                "2000-01-21T00:00:00.000000000",
+                "2000-02-01T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+
+
+def test_period_end_date_dekad(darr):
+    assert isinstance(darr.time.dekad.end_date, xr.DataArray)
+    np.testing.assert_equal(
+        darr.time.dekad.end_date.values,
+        np.array(
+            [
+                "2000-01-10T23:59:59.999999000",
+                "2000-01-20T23:59:59.999999000",
+                "2000-01-31T23:59:59.999999000",
+                "2000-01-31T23:59:59.999999000",
+                "2000-02-10T23:59:59.999999000",
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+
+
+def test_period_raw_dekad(darr):
+    assert isinstance(darr.time.dekad.raw, xr.DataArray)
+    np.testing.assert_array_equal(
+        darr.time.dekad.raw, [72000, 72001, 72002, 72002, 72003]
+    )
+
+
 def test_period_labels_dekad(darr):
     assert isinstance(darr.time.dekad.label, xr.DataArray)
     np.testing.assert_array_equal(
