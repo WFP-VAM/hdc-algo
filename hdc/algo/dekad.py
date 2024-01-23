@@ -72,20 +72,44 @@ class Dekad:
         return hash(self._dkd)
 
     def __eq__(self, other: object) -> bool:
-        """Check equality with other Dekad or a string."""
-        if isinstance(other, str):
-            return str(self) == other
-        if isinstance(other, Dekad):
-            return self._dkd == other._dkd
-        return False
+        """Check equality with other Dekad, string or int."""
+        if isinstance(other, (str, int, datetime, date)):
+            other = Dekad(other)
+        if not isinstance(other, Dekad):
+            return NotImplemented
+        return self._dkd == other._dkd
 
-    def __lt__(self, other: object) -> bool:
-        """Check for less than inequality with other Dekad or a string."""
-        if isinstance(other, str):
-            return str(self) < other
-        if isinstance(other, Dekad):
-            return self._dkd < other._dkd
-        return False
+    def __lt__(self, other: Union[str, int, datetime, date, "Dekad"]) -> bool:
+        """Check for less than inequality with other Dekad, string or int."""
+        if isinstance(other, (str, int, datetime, date)):
+            other = Dekad(other)
+        if not isinstance(other, Dekad):
+            return NotImplemented
+        return self._dkd < other._dkd
+
+    def __gt__(self, other: Union[str, int, datetime, date, "Dekad"]) -> bool:
+        """Check for greater than inequality with other Dekad, string or int."""
+        if isinstance(other, (str, int, datetime, date)):
+            other = Dekad(other)
+        if not isinstance(other, Dekad):
+            return NotImplemented
+        return self._dkd > other._dkd
+
+    def __le__(self, other: Union[str, int, datetime, date, "Dekad"]) -> bool:
+        """Check for less than or equal inequality with other Dekad, string or int."""
+        if isinstance(other, (str, int, datetime, date)):
+            other = Dekad(other)
+        if not isinstance(other, Dekad):
+            return NotImplemented
+        return self._dkd <= other._dkd
+
+    def __ge__(self, other: Union[str, int, datetime, date, "Dekad"]) -> bool:
+        """Check for greater than or equal inequality with other Dekad, string or int."""
+        if isinstance(other, (str, int, datetime, date)):
+            other = Dekad(other)
+        if not isinstance(other, Dekad):
+            return NotImplemented
+        return self._dkd >= other._dkd
 
     @property
     def start_date(self) -> datetime:
