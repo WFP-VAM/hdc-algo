@@ -22,12 +22,15 @@ from hdc.algo.ops.stats import (
     gammafit,
     gammastd,
     gammastd_yxt,
+    gammastd_grp,
+    mean_grp,
     mk_score,
     mk_p_value,
     mk_z_score,
     mk_variance_s,
     mk_sens_slope,
     mann_kendall_trend_1d,
+    rolling_sum,
 )
 
 
@@ -92,8 +95,8 @@ def test_gammafit(ts):
     assert parameters == pytest.approx((1.083449238500003, 0.9478709674697126))
 
 
-def test_spi(ts):
-    xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1))
+def test_gammastd(ts):
+    xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1), -9999)
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
         xspi[0, 0, :],
@@ -101,8 +104,17 @@ def test_spi(ts):
     )
 
 
-def test_spi_nofit(ts):
-    xspi = gammastd.py_func(ts, 0, len(ts), a=1, b=2)
+def test_gammastd(ts):
+    xspi = gammastd.py_func(ts, -9999, 0, 10)
+
+    np.testing.assert_array_equal(
+        (xspi * 1000).round(),
+        [-382.0, 1654.0, 588.0, 207.0, -1097.0, -1098.0, -1677.0, 1094.0, 213.0, 514.0],
+    )
+
+
+def test_gammastd_nofit(ts):
+    xspi = gammastd.py_func(ts, -9999, 0, len(ts), a=1, b=2)
     xspi
     np.testing.assert_array_equal(
         (xspi * 1000).round(),
@@ -121,8 +133,8 @@ def test_spi_nofit(ts):
     )
 
 
-def test_spi_selfit(ts):
-    xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1), cal_start=0, cal_stop=3)
+def test_gammastd_selfit(ts):
+    xspi = gammastd_yxt.py_func(ts.reshape(1, 1, -1), -9999, cal_start=0, cal_stop=3)
     assert xspi.shape == (1, 1, 10)
     np.testing.assert_array_equal(
         xspi[0, 0, :],
@@ -141,13 +153,54 @@ def test_spi_selfit(ts):
     )
 
 
-def test_spi_selfit_2(ts):
+def test_gammastd_selfit_2(ts):
     cal_start = 2
     cal_stop = 8
+    nodata = -9999
     a, b = gammafit.py_func(ts[cal_start:cal_stop])
-    xspi_ref = gammastd.py_func(ts, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b)
-    xspi = gammastd.py_func(ts, cal_start=cal_start, cal_stop=cal_stop)
+    xspi_ref = gammastd.py_func(
+        ts, nodata, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b
+    )
+    xspi = gammastd.py_func(ts, nodata, cal_start=cal_start, cal_stop=cal_stop)
     np.testing.assert_equal(xspi, xspi_ref)
+
+
+def test_gammastd_grp(ts):
+    tts = np.repeat(ts, 5).astype("float32")
+    grps = np.tile(np.arange(5), 10).astype("int16")
+    xspi = gammastd_grp(tts, grps, np.unique(grps).size, 0, 0, 10)
+
+    res = [
+        -0.38238713,
+        1.6544422,
+        0.5879236,
+        0.20665395,
+        -1.0974495,
+        -1.0975538,
+        -1.6773673,
+        1.093621,
+        0.21322519,
+        0.5144766,
+    ]
+
+    np.testing.assert_almost_equal(xspi, (np.repeat(res, 5) * 1000).round())
+
+
+def test_mean_grp(ts):
+    tts = np.repeat(ts, 5).astype("float32")
+    grps = np.tile(np.arange(5), 10).astype("int16")
+    res = mean_grp(tts, grps, np.unique(grps).size, 0)
+    assert (res == 1.02697).all()
+
+
+def test_rolling_sum():
+    res = rolling_sum(np.arange(10).astype("float32"), 3, 0)
+    np.testing.assert_almost_equal(
+        res,
+        np.array(
+            [0.0, 0.0, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0], dtype="float32"
+        ),
+    )
 
 
 def test_ws2dgu(ts):

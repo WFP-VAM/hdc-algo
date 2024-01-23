@@ -1,7 +1,8 @@
 """Numba accelerated statistical funtions."""
 from math import erf, log, sqrt
 
-import numba
+
+from numba import guvectorize, njit
 import numpy as np
 import scipy.special as sc
 
@@ -11,7 +12,7 @@ from ._helper import lazycompile
 _init_extension()
 
 
-@numba.njit
+@njit
 def brentq(xa, xb, s):
     """
     Root finding optimization using Brent's method.
@@ -108,7 +109,7 @@ def brentq(xa, xb, s):
     return xcur
 
 
-@numba.njit
+@njit
 def gammafit(x):
     # pylint: disable=line-too-long
     """
@@ -150,8 +151,8 @@ def gammafit(x):
     return (a, b)
 
 
-@numba.njit
-def gammastd(x, cal_start, cal_stop, a=0, b=0):
+@njit
+def gammastd(x, nodata, cal_start, cal_stop, a=0, b=0):
     """Calculate a standardized index for observations based on fitted gamma distribution.
 
     The standardized index are anomalies relative to a variable's statistics
@@ -175,7 +176,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
     p_zero = 1 - (n_valid / t)
 
     if p_zero > 0.9:
-        return np.full_like(x, -9999, dtype="float64")
+        return np.full_like(x, nodata, dtype="float64")
 
     if (a == 0) and (b == 0):
         alpha, beta = gammafit(x[cal_start:cal_stop])
@@ -183,7 +184,7 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
         alpha, beta = (a, b)
 
     if alpha == 0 or beta == 0:
-        return np.full_like(x, -9999, dtype="float64")
+        return np.full_like(x, nodata, dtype="float64")
 
     y = np.full(t, p_zero, dtype="float64")  # type: ignore
 
@@ -198,9 +199,10 @@ def gammastd(x, cal_start, cal_stop, a=0, b=0):
     return y
 
 
-@numba.njit
+@njit
 def gammastd_yxt(
     x,
+    nodata,
     cal_start=None,
     cal_stop=None,
 ):
@@ -210,7 +212,6 @@ def gammastd_yxt(
     of the array with the assumption the time dimension is the last one.
     The outputs are scaled by 1000 and cast to in16.
     """
-    y = np.full_like(x, -9999, dtype="int16")
     r, c, t = x.shape
 
     if cal_start is None:
@@ -219,11 +220,16 @@ def gammastd_yxt(
     if cal_stop is None:
         cal_stop = t
 
+    y = np.full_like(x, nodata, dtype="int16")
+
     for ri in range(r):
         for ci in range(c):
             xt = x[ri, ci, :]
-            s = gammastd(xt, cal_start, cal_stop)
-            if (s != -9999).sum() > 0:
+            if (xt != nodata).sum() == 0:
+                y[ri, ci, :] = nodata
+                continue
+            s = gammastd(xt, nodata, cal_start, cal_stop)
+            if (s != nodata).sum() > 0:
                 s = s * 1000
                 np.round_(s, 0, s)
                 y[ri, ci, :] = s[:]
@@ -231,7 +237,37 @@ def gammastd_yxt(
     return y
 
 
-@numba.njit
+@lazycompile(
+    guvectorize(
+        [
+            "(int16[:], int16[:], float64, float64, float64, float64, int16[:])",
+            "(float32[:], int16[:], float64, float64, float64, float64, int16[:])",
+        ],
+        "(n),(m),(),(),(),() -> (n)",
+    )
+)
+def gammastd_grp(xx, groups, num_groups, nodata, cal_start, cal_stop, yy):
+    """Calculate the gammastd for specific groups.
+
+    This calculates gammastd across xx for indivual groups
+    defined in `groups`. These need to be in ascending order from
+    0 to num_groups - 1.
+    """
+    for grp in range(num_groups):
+        grp_ix = groups == grp
+        pix = xx[grp_ix]
+        if (pix != nodata).sum() == 0:
+            yy[grp_ix] = nodata
+            continue
+        res = gammastd(pix, nodata, cal_start, cal_stop)
+        if (res != nodata).sum() > 0:
+            valid_ix = res != nodata
+            res[valid_ix] = res[valid_ix] * 1000
+            np.round_(res, 0, res)
+        yy[grp_ix] = res[:]
+
+
+@njit
 def mk_score(x):
     """Calculate MK score (S) and Kendall's Tau.
 
@@ -257,7 +293,7 @@ def mk_score(x):
     return s, tau
 
 
-@numba.njit
+@njit
 def mk_variance_s(x):
     """Mann-Kendall's variance S.
 
@@ -285,7 +321,7 @@ def mk_variance_s(x):
     return ((n * (n - 1) * (2 * n + 5)) - tp) / 18
 
 
-@numba.njit
+@njit
 def mk_z_score(s, vs):
     """Calculate Mann-Kendall's Z (MKZ).
 
@@ -304,7 +340,7 @@ def mk_z_score(s, vs):
     return 0
 
 
-@numba.njit
+@njit
 def mk_p_value(z, alpha=0.05):
     """Calculate Mann-Kendall's p value and significance.
 
@@ -320,7 +356,7 @@ def mk_p_value(z, alpha=0.05):
     return p, h
 
 
-@numba.njit
+@njit
 def mk_sens_slope(x):
     """Calculate Sen's slope and intercept for Mann-Kendall test.
 
@@ -343,7 +379,7 @@ def mk_sens_slope(x):
     return slope, intercept
 
 
-@numba.njit
+@njit
 def mann_kendall_trend_yxt(x):
     """Calculate Mann-Kendall trend over y, x, t array.
 
@@ -382,7 +418,7 @@ def mann_kendall_trend_yxt(x):
     return r
 
 
-@numba.njit
+@njit
 def mann_kendall_trend_1d(x):
     """Caluclate Mann-Kendall trend metric on 1-d array.
 
@@ -411,7 +447,7 @@ def mann_kendall_trend_1d(x):
 
 
 @lazycompile(
-    numba.guvectorize(
+    guvectorize(
         [
             "(int16[:], float64, float32[:], float32[:], float32[:], int8[:])",
             "(float32[:], float64, float32[:], float32[:], float32[:], int8[:])",
@@ -433,7 +469,7 @@ def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
 
 
 @lazycompile(
-    numba.guvectorize(
+    guvectorize(
         [
             "(int16[:], float32[:], float32[:], float32[:], int8[:])",
             "(float32[:], float32[:], float32[:], float32[:], int8[:])",
@@ -445,3 +481,62 @@ def _mann_kendall_trend_gu_nd(x, nodata, tau, p, slope, trend):
 def _mann_kendall_trend_gu(x, tau, p, slope, trend):
     """Guvectorize wrapper for mann_kendall_trend_1d."""
     tau[0], p[0], slope[0], trend[0] = mann_kendall_trend_1d(x)
+
+
+@lazycompile(
+    guvectorize(
+        [
+            "(float32[:], int16[:], float64, float64, float32[:])",
+            "(int16[:], int16[:], float64, float64, float32[:])",
+            "(int32[:], int16[:], float64, float64, float32[:])",
+            "(int64[:], int16[:], float64, float64, float32[:])",
+        ],
+        "(n),(m),(),() -> (n)",
+    )
+)
+def mean_grp(xx, groups, num_groups, nodata, yy):
+    """Calculate grouped mean."""
+    for grp in range(num_groups):
+        grp_ix = groups == grp
+        pix = xx[grp_ix]
+        n = 0
+        for pixv in pix:
+            if pixv == nodata:
+                continue
+            if n == 0:
+                avg = pixv
+            else:
+                avg += pixv
+            n += 1
+        if n == 0:
+            avg = nodata
+        else:
+            avg = avg / n
+
+        yy[grp_ix] = avg
+
+
+@lazycompile(
+    guvectorize(
+        [
+            "(float32[:], float64, float64, float32[:])",
+            "(int16[:], float64, float64, float32[:])",
+            "(int64[:], float64, float64, float32[:])",
+        ],
+        "(n),(),() -> (n)",
+    )
+)
+def rolling_sum(xx, window_size, nodata, yy):
+    """Calculate moving window sum over specified size."""
+    n = xx.size
+    yy[:] = 0
+    for ii in range(n):
+        if ii - window_size + 1 < 0:
+            yy[ii] = nodata
+            continue
+
+        for jj in range(ii - window_size + 1, ii + 1):
+            if xx[jj] == nodata:
+                yy[ii] = nodata
+                continue
+            yy[ii] += xx[jj]

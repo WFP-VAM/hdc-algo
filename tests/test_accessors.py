@@ -73,6 +73,54 @@ def test_period_yidx_dekad(darr):
     np.testing.assert_array_equal(darr.time.dekad.yidx, [1, 2, 3, 3, 4])
 
 
+def test_period_ndays_dekad(darr):
+    assert isinstance(darr.time.dekad.ndays, xr.DataArray)
+    np.testing.assert_equal(
+        darr.time.dekad.ndays.values, np.array([10, 10, 11, 11, 10])
+    )
+
+
+def test_period_start_date_dekad(darr):
+    assert isinstance(darr.time.dekad.start_date, xr.DataArray)
+    np.testing.assert_equal(
+        darr.time.dekad.start_date.values,
+        np.array(
+            [
+                "2000-01-01T00:00:00.000000000",
+                "2000-01-11T00:00:00.000000000",
+                "2000-01-21T00:00:00.000000000",
+                "2000-01-21T00:00:00.000000000",
+                "2000-02-01T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+
+
+def test_period_end_date_dekad(darr):
+    assert isinstance(darr.time.dekad.end_date, xr.DataArray)
+    np.testing.assert_equal(
+        darr.time.dekad.end_date.values,
+        np.array(
+            [
+                "2000-01-10T23:59:59.999999000",
+                "2000-01-20T23:59:59.999999000",
+                "2000-01-31T23:59:59.999999000",
+                "2000-01-31T23:59:59.999999000",
+                "2000-02-10T23:59:59.999999000",
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+
+
+def test_period_raw_dekad(darr):
+    assert isinstance(darr.time.dekad.raw, xr.DataArray)
+    np.testing.assert_array_equal(
+        darr.time.dekad.raw, [72000, 72001, 72002, 72002, 72003]
+    )
+
+
 def test_period_labels_dekad(darr):
     assert isinstance(darr.time.dekad.label, xr.DataArray)
     np.testing.assert_array_equal(
@@ -141,6 +189,12 @@ def test_algo_autocorr_da(darr):
 
 def test_algo_spi(darr, res_spi):
     _res = darr.hdc.algo.spi()
+    assert isinstance(_res, xr.DataArray)
+    np.testing.assert_array_equal(_res, res_spi)
+
+
+def test_algo_spi_grouped(darr, res_spi):
+    _res = darr.astype("float32").hdc.algo.spi(groups=np.array([0] * 5, dtype="int16"))
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
@@ -214,6 +268,13 @@ def test_algo_spi_decoupled_3(darr):
 
     assert _res.attrs["spi_calibration_start"] == "2000-01-11"
     assert _res.attrs["spi_calibration_stop"] == "2000-02-10"
+
+
+def test_algo_spi_nodata(darr):
+    _ = darr.attrs.pop("nodata")
+    with pytest.raises(ValueError):
+        _ = darr.hdc.algo.spi()
+    _ = darr.hdc.algo.spi(nodata=-9999)
 
 
 def test_algo_spi_decoupled_err_1(darr):
@@ -888,7 +949,7 @@ def test_zonal_mean(darr, zones):
                 [[63.0, 2.0], [16.0, 2.0]],
             ]
         ),
-        dtype="float64",
+        dtype="float32",
     )
 
     z_ids = np.unique(zones.data)
@@ -897,6 +958,7 @@ def test_zonal_mean(darr, zones):
     np.testing.assert_equal(x.coords["zones"].data, [0, 1])
     assert list(x.coords["stat"].values) == ["mean", "valid"]
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_mean_nodata(darr, zones):
@@ -908,7 +970,7 @@ def test_zonal_mean_nodata(darr, zones):
             [[28.0, 2.0], [12.0, 2.0]],
             [[63.0, 2.0], [16.0, 2.0]],
         ],
-        dtype="float64",
+        dtype="float32",
     )
 
     darr[0, 0, 0] = darr.nodata
@@ -916,6 +978,7 @@ def test_zonal_mean_nodata(darr, zones):
     z_ids = np.unique(zones.data)
     x = darr.hdc.zonal.mean(zones, z_ids)
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_mean_nodata_nan(darr, zones):
@@ -943,8 +1006,9 @@ def test_zonal_mean_nodata_nan_float(darr, zones):
     darr[0, 0, 0] = "nan"
 
     z_ids = np.unique(zones.data)
-    x = darr.hdc.zonal.mean(zones, z_ids)
+    x = darr.hdc.zonal.mean(zones, z_ids, dtype="float64")
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_zone_nodata_nan(darr, zones):
@@ -961,13 +1025,14 @@ def test_zonal_zone_nodata_nan(darr, zones):
 
     zones.attrs = {"nodata": 0}
     z_ids = np.unique(zones.data)
-    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo")
+    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo", dtype="float64")
     np.testing.assert_almost_equal(x, res)
+    assert x.dtype == res.dtype
 
 
 def test_zonal_dimname(darr, zones):
     z_ids = np.unique(zones.data)
-    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo")
+    x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo", dtype="float64")
     assert x.dims == ("time", "foo", "stat")
 
 
@@ -989,3 +1054,41 @@ def test_zonal_type_exc(darr, zones):
     z_ids = np.unique(zones.data)
     with pytest.raises(ValueError):
         _ = darr.hdc.zonal.mean(zones.data, z_ids)
+
+
+def test_rolling_sum(darr):
+    res = darr.hdc.rolling.sum(window_size=3).transpose("time", ...)
+    xr.testing.assert_equal(
+        res,
+        darr.rolling(time=3).sum().dropna("time"),
+    )
+    np.testing.assert_equal(darr[-3:].sum("time").data, res[-1].data)
+
+
+def test_rolling_sum_nodata(darr):
+    darr[:, 0, 0] = -9999
+    xr.testing.assert_equal(
+        darr.hdc.rolling.sum(3, nodata=-9999).transpose("time", ...),
+        darr.rolling(time=3).sum().where(darr != -9999, -9999).dropna("time"),
+    )
+
+
+def test_mean_grp(darr):
+    grps = np.array([0, 0, 1, 1, 2], dtype="int16")
+    tst = darr.hdc.algo.mean_grp(grps)[..., [0, 2, 4]]
+    cntrl = (
+        darr.groupby(xr.DataArray(grps, dims=("time",))).mean().transpose(..., "group")
+    )
+
+    np.testing.assert_allclose(tst.data, cntrl.data)
+
+
+def test_mean_grp_exc(darr):
+    grps = np.array([0, 0, 1, 1, 2], dtype="int16")
+    _darr = darr.copy()
+    _ = _darr.attrs.pop("nodata")
+    with pytest.raises(ValueError):
+        _darr.hdc.algo.mean_grp(grps)
+
+    with pytest.raises(MissingTimeError):
+        darr.rename(time="foo").hdc.algo.mean_grp(grps)
