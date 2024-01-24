@@ -1,5 +1,7 @@
 from datetime import date, datetime, timedelta
 
+import pytest
+
 from hdc.algo.dekad import Dekad
 
 # pylint: disable=use-implicit-booleaness-not-comparison
@@ -23,11 +25,15 @@ def test_dekad():
     assert Dekad(datetime(2021, 1, 1)) == "202101d1"
     assert Dekad(datetime(2021, 12, 11)) == "202112d2"
 
+    # Test equality
     assert Dekad("199912d3") == "199912d3"
     assert Dekad("199912d3") == Dekad(2000 * 36 - 1)
+    assert Dekad("202110d3") == 2021 * 36 + 3 * (10 - 1) + (3 - 1)
+    assert Dekad(Dekad("199912d3")) == Dekad("199912d3")
     assert (Dekad("200012d3") == []) is False
-    assert len(set([Dekad("20211221")] * 10)) == 1
 
+    # Hashing and representation
+    assert len(set([Dekad("20211221")] * 10)) == 1
     assert str(Dekad("199912d3")) == "199912d3"
     assert repr(Dekad("199912d3")) == 'Dekad("199912d3")'
 
@@ -60,3 +66,24 @@ def test_dekad():
     assert Dekad("202202d1").ndays == 10
     assert Dekad("202202d3").ndays == 8
     assert Dekad("202002d3").ndays == 9
+
+    # Test inequalities
+    assert Dekad("202202d3") < Dekad(date(2022, 3, 28))
+    assert Dekad("202202d3") < date(2022, 3, 28)
+    assert Dekad("202110d3") < "202212d3"
+    assert Dekad("202110d3") < 2021 * 36 + 3 * (11 - 1) + (3 - 1)
+
+    assert Dekad("202202d3") > Dekad(date(2019, 3, 28))
+    assert Dekad("202202d3") > datetime(2019, 3, 28)
+    assert Dekad("202110d3") > "201912d3"
+    assert Dekad("202110d3") > 2019 * 36 + 3 * (11 - 1) + (3 - 1)
+
+    assert Dekad("202202d3") >= Dekad(date(2022, 2, 28))
+    assert Dekad("202202d3") >= date(2022, 2, 28)
+    assert Dekad("202110d3") >= "202110d3"
+    assert Dekad("202111d3") >= 2021 * 36 + 3 * (10 - 1) + (3 - 1)
+
+    assert Dekad("202202d3") <= Dekad(date(2023, 2, 28))
+    assert Dekad("202202d3") <= date(2023, 2, 28)
+    assert Dekad("202110d3") <= "202110d3"
+    assert Dekad("202110d3") <= 2021 * 36 + 3 * (10 - 1) + (3 - 1)
