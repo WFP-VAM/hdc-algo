@@ -1,4 +1,5 @@
 """Tests for pixel alogrithms"""
+
 # pylint: disable=no-name-in-module,redefined-outer-name,no-value-for-parameter
 # pyright: reportGeneralTypeIssues=false
 import numpy as np

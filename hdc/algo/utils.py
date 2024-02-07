@@ -1,10 +1,12 @@
+"""hcd-algo utility functions."""
+
 from typing import List, Tuple
 
 import numpy as np
 
 
 def to_linspace(x) -> Tuple[np.ndarray, List[int]]:
-    """Maps input array to linear space.
+    """Map input array to linear space.
 
     Returns array with linear index (0 - n-1) and list of
     original keys matching the indices.
