@@ -3,7 +3,7 @@ twine
 pytest
 pytest-runner
 pytest-cov
-black
+black>=24.1.0
 pylint==2.17.2
 astroid==2.15.3
 pydocstyle

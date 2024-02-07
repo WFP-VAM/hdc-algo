@@ -1,4 +1,5 @@
 """Tests for xarray accessors"""
+
 # pylint: disable=redefined-outer-name,unused-import,no-member,no-name-in-module,missing-function-docstring
 # pyright: reportGeneralTypeIssues=false
 
@@ -71,6 +72,11 @@ def test_period_idx_dekad(darr):
 def test_period_yidx_dekad(darr):
     assert isinstance(darr.time.dekad.yidx, xr.DataArray)
     np.testing.assert_array_equal(darr.time.dekad.yidx, [1, 2, 3, 3, 4])
+
+
+def test_period_yidx_linspace_dekad(darr):
+    assert isinstance(darr.time.dekad.linspace, xr.DataArray)
+    np.testing.assert_array_equal(darr.time.dekad.linspace, [0, 1, 2, 2, 3])
 
 
 def test_period_ndays_dekad(darr):

@@ -1,4 +1,5 @@
 """Numba accelerated statistical funtions."""
+
 from math import erf, log, sqrt
 
 

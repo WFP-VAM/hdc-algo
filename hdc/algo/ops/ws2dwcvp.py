@@ -1,4 +1,5 @@
 """Whittaker filter V-curve optimization of S and asymmetric weights."""
+
 # pyright: reportGeneralTypeIssues=false
 import numpy as np
 from numba import guvectorize, jit

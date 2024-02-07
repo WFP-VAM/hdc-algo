@@ -1,4 +1,5 @@
 """Numba accelerated zonal statistics."""
+
 from numba import njit
 import numpy as np
 

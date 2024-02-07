@@ -1,4 +1,5 @@
 """Dekad helper class."""
+
 from datetime import date, datetime, timedelta
 from typing import Tuple, Union, overload
 

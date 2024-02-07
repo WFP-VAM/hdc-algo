@@ -1,4 +1,5 @@
 """Interpolation numba functions."""
+
 from numba import guvectorize
 from numba.core.types import float64, int16, int32, uint8
 

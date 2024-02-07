@@ -1,4 +1,5 @@
 """Seasonal Monitoring Algorithms."""
+
 # isort: skip_file
 from ._version import __version__
 

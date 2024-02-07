@@ -1,4 +1,5 @@
 """Whittaker filter with differences of 2nd order for a 1d array."""
+
 from numba import njit
 from numpy import zeros
 

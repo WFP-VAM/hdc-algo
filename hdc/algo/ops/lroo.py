@@ -1,4 +1,5 @@
 """Calculate the longest run of ones inside a 1d array."""
+
 import numpy as np
 from numba import guvectorize
 

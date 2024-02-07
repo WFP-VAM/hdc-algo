@@ -1,4 +1,5 @@
 """Whittaker smoother with asymmetric smoothing and fixed lambda (S)."""
+
 import numpy as np
 from numba import guvectorize
 from numba.core.types import float64, int16

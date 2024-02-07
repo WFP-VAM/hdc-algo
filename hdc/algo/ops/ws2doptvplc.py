@@ -3,6 +3,7 @@ Whittaker filter V-curve optimization of S, asymmetric weights and srange from a
 
 numba implementations.
 """
+
 # pyright: reportGeneralTypeIssues=false
 from math import log, sqrt
 

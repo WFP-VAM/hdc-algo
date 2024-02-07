@@ -14,18 +14,19 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache@v3
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
         id: wheels_cache
         with:
           path: ./wheels
           key: wheels-${{ github.sha }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_S3_UPLOAD_ROLE }}
           aws-region: eu-central-1
+          mask-aws-account-id: true
 
       - name: upload wheels to S3
         run: |
