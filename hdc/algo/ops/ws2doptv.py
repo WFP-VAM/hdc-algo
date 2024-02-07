@@ -1,4 +1,5 @@
 """Whittaker filter V-curve optimization os S."""
+
 from math import log, sqrt
 
 import numpy as np

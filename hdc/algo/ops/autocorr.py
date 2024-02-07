@@ -1,4 +1,5 @@
 """Lag-1 autocorrelations."""
+
 from numba import njit
 from numba.core.types import float32, float64, int64
 from numpy import isnan, zeros
