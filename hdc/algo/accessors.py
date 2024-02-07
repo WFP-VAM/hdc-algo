@@ -1,4 +1,5 @@
 """Xarray Accesor classes."""
+
 from typing import Iterable, List, Optional, Union
 from warnings import warn
 
@@ -119,6 +120,10 @@ class Period(AccessorTimeBase):
     @property
     def raw(self):
         return self._tseries.apply(lambda x: self._period_cls(x).raw).to_xarray()
+
+    @property
+    def linspace(self):
+        return self.yidx - 1
 
 
 @xarray.register_dataset_accessor("dekad")
