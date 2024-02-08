@@ -806,7 +806,7 @@ class ZonalStatistics(AccessorBase):
 
         # set null values to nodata value
         xx = xx.where(xx.notnull(), xx.nodata)
-
+        attrs = xx.attrs
         num_zones = len(zone_ids)
         dims = (xx.dims[0], dim_name, "stat")
         coords = {
@@ -849,7 +849,7 @@ class ZonalStatistics(AccessorBase):
             )
 
         return xarray.DataArray(
-            data=data, dims=dims, coords=coords, attrs={}, name=name
+            data=data, dims=dims, coords=coords, attrs=attrs, name=name
         )
 
 
