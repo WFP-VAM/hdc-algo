@@ -12,6 +12,7 @@ import xarray
 
 from . import ops
 from .dekad import Dekad
+from .utils import to_linspace
 
 __all__ = [
     "Anomalies",
@@ -466,7 +467,7 @@ class PixelAlgorithms(AccessorBase):
         calibration_start: Optional[str] = None,
         calibration_stop: Optional[str] = None,
         nodata: Optional[Union[float, int]] = None,
-        groups: Optional[Iterable[int]] = None,
+        groups: Optional[Iterable[Union[int, float, str]]] = None,
         dtype="int16",
     ):
         """Calculate the SPI along the time dimension.
@@ -475,8 +476,7 @@ class PixelAlgorithms(AccessorBase):
         Optionally, a calibration start and / or stop date can be provided which
         determine the part of the timeseries used to fit the gamma distribution.
 
-        `groups` can be supplied as list of group labels (attention, they are required
-        to be in format {0..n-1} where n is the number of unique groups.
+        `groups` can be supplied as list of group labels.
         If `groups` is supplied, the SPI will be computed for each individual group.
         This is intended to be used when SPI should be calculated for specific timesteps.
         """
@@ -540,12 +540,12 @@ class PixelAlgorithms(AccessorBase):
             )
 
         else:
-            groups = np.array(groups) if not isinstance(groups, np.ndarray) else groups
-            num_groups = np.unique(groups).size
+            if len(groups) != len(self._obj.time):
+                raise ValueError("Need array of groups same length as time dimension!")
 
-            if not groups.dtype.name == "int16":
-                warn("Casting groups to int16!")
-                groups = groups.astype("int16")
+            groups, keys = to_linspace(np.array(groups, dtype="str"))
+            groups = groups.astype("int16")
+            num_groups = len(keys)
 
             res = xarray.apply_ufunc(
                 gammastd_grp,
