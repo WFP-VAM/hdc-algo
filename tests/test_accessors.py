@@ -220,18 +220,18 @@ def test_algo_spi_transp(darr, res_spi):
 
 def test_algo_spi_attrs_default(darr):
     _res = darr.hdc.algo.spi()
-    assert _res.attrs["spi_calibration_start"] == str(darr.time.dt.date[0].values)
-    assert _res.attrs["spi_calibration_stop"] == str(darr.time.dt.date[-1].values)
+    assert _res.attrs["spi_calibration_start"] == str(darr.time.to_index()[0])
+    assert _res.attrs["spi_calibration_stop"] == str(darr.time.to_index()[-1])
 
 
 def test_algo_spi_attrs_start(darr):
     _res = darr.hdc.algo.spi(calibration_start="2000-01-02")
-    assert _res.attrs["spi_calibration_start"] == "2000-01-11"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-11 00:00:00"
 
 
 def test_algo_spi_attrs_stop(darr):
     _res = darr.hdc.algo.spi(calibration_stop="2000-02-09")
-    assert _res.attrs["spi_calibration_stop"] == "2000-01-31"
+    assert _res.attrs["spi_calibration_stop"] == "2000-01-31 00:00:00"
 
 
 def test_algo_spi_decoupled_1(darr, res_spi):
@@ -242,8 +242,8 @@ def test_algo_spi_decoupled_1(darr, res_spi):
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-01"
-    assert _res.attrs["spi_calibration_stop"] == "2000-02-10"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-01 00:00:00"
+    assert _res.attrs["spi_calibration_stop"] == "2000-02-10 00:00:00"
 
 
 def test_algo_spi_decoupled_2(darr):
@@ -261,8 +261,8 @@ def test_algo_spi_decoupled_2(darr):
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-01"
-    assert _res.attrs["spi_calibration_stop"] == "2000-01-31"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-01 00:00:00"
+    assert _res.attrs["spi_calibration_stop"] == "2000-01-31 00:00:00"
 
 
 def test_algo_spi_decoupled_3(darr):
@@ -278,8 +278,8 @@ def test_algo_spi_decoupled_3(darr):
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-11"
-    assert _res.attrs["spi_calibration_stop"] == "2000-02-10"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-11 00:00:00"
+    assert _res.attrs["spi_calibration_stop"] == str(darr.time.to_index()[-1])
 
 
 def test_algo_spi_nodata(darr):

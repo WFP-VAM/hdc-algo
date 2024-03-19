@@ -7,12 +7,11 @@ from dask import is_dask_collection
 import dask.array as da
 from dask.base import tokenize
 import numpy as np
-import pandas as pd
 import xarray
 
 from . import ops
 from .dekad import Dekad
-from .utils import to_linspace
+from .utils import get_calibration_indices, to_linspace
 
 __all__ = [
     "Anomalies",
@@ -497,33 +496,31 @@ class PixelAlgorithms(AccessorBase):
 
         tix = self._obj.get_index("time")
 
-        calstart_ix = 0
-        if calibration_start is not None:
-            calstart = pd.Timestamp(calibration_start)
-            if calstart > tix[-1]:
-                raise ValueError(
-                    "Calibration start cannot be greater than last timestamp!"
-                )
-            (calstart_ix,) = tix.get_indexer([calstart], method="bfill")
+        if calibration_start is None:
+            calibration_start = tix[0]
 
-        calstop_ix = tix.size
-        if calibration_stop is not None:
-            calstop = pd.Timestamp(calibration_stop)
-            if calstop < tix[0]:
-                raise ValueError(
-                    "Calibration stop cannot be smaller than first timestamp!"
-                )
-            (calstop_ix,) = tix.get_indexer([calstop], method="ffill") + 1
+        if calibration_stop is None:
+            calibration_stop = tix[-1]
 
-        if calstart_ix >= calstop_ix:
-            raise ValueError("calibration_start < calibration_stop!")
+        if calibration_start > tix[-1:]:
+            raise ValueError("Calibration start cannot be greater than last timestamp!")
 
-        if abs(calstop_ix - calstart_ix) <= 1:
-            raise ValueError(
-                "Timeseries too short for calculating SPI. Please adjust calibration period!"
-            )
+        if calibration_stop < tix[:1]:
+            raise ValueError("Calibration stop cannot be smaller than first timestamp!")
 
         if groups is None:
+            calstart_ix, calstop_ix = get_calibration_indices(
+                tix, calibration_start, calibration_stop
+            )
+
+            if calstart_ix >= calstop_ix:
+                raise ValueError("calibration_start < calibration_stop!")
+
+            if abs(calstop_ix - calstart_ix) <= 1:
+                raise ValueError(
+                    "Timeseries too short for calculating SPI. Please adjust calibration period!"
+                )
+
             res = xarray.apply_ufunc(
                 gammastd_yxt,
                 self._obj,
@@ -540,12 +537,28 @@ class PixelAlgorithms(AccessorBase):
             )
 
         else:
+
+            groups, keys = to_linspace(np.array(groups, dtype="str"))
+
             if len(groups) != len(self._obj.time):
                 raise ValueError("Need array of groups same length as time dimension!")
 
-            groups, keys = to_linspace(np.array(groups, dtype="str"))
             groups = groups.astype("int16")
             num_groups = len(keys)
+
+            cal_indices = get_calibration_indices(
+                tix, calibration_start, calibration_stop, groups, num_groups
+            )
+            # assert for mypy
+            assert isinstance(cal_indices, np.ndarray)
+
+            if np.any(cal_indices[:, 0] >= cal_indices[:, 1]):
+                raise ValueError("calibration_start < calibration_stop!")
+
+            if np.any(np.diff(cal_indices, axis=1) <= 1):
+                raise ValueError(
+                    "Timeseries too short for calculating SPI. Please adjust calibration period!"
+                )
 
             res = xarray.apply_ufunc(
                 gammastd_grp,
@@ -553,9 +566,8 @@ class PixelAlgorithms(AccessorBase):
                 groups,
                 num_groups,
                 nodata,
-                calstart_ix,
-                calstop_ix,
-                input_core_dims=[["time"], ["grps"], [], [], [], []],
+                cal_indices,
+                input_core_dims=[["time"], ["grps"], [], [], ["start", "stop"]],
                 output_core_dims=[["time"]],
                 keep_attrs=True,
                 dask="parallelized",
@@ -564,8 +576,8 @@ class PixelAlgorithms(AccessorBase):
 
         res.attrs.update(
             {
-                "spi_calibration_start": str(tix[calstart_ix].date()),
-                "spi_calibration_stop": str(tix[calstop_ix - 1].date()),
+                "spi_calibration_start": str(tix[tix >= calibration_start][0]),
+                "spi_calibration_stop": str(tix[tix <= calibration_stop][-1]),
             }
         )
 

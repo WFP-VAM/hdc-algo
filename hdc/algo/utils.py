@@ -3,10 +3,11 @@
 from typing import Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 
 
-def to_linspace(x) -> Tuple[np.ndarray, List[int]]:
+def to_linspace(x) -> Tuple[NDArray[(np.int16,)], List[int]]:
     """Map input array to linear space.
 
     Returns array with linear index (0 - n-1) and list of
@@ -41,24 +42,19 @@ def get_calibration_indices(
     the second column is the stop index.
 
     Parameters:
-        time (pd.DatetimeIndex): The time index.
-        start (str): The start time of the calibration range.
-        stop (str): The stop time of the calibration range.
-        groups (Optional[Iterable[Union[int, float, str]]]): Optional groups to consider for calibration.
-        num_groups (Optional[int]): Optional number of groups to consider for calibration.
-
-    Returns:
-        Union[Tuple[int, int], np.ndarray]: The calibration indices. If groups is None, returns a tuple of two indices.
-        If groups is not None, returns a numpy array of shape (num_groups, 2) containing the indices for each group.
-
+        time: The time index.
+        start: The start time of the calibration range.
+        stop: The stop time of the calibration range.
+        groups: Optional groups to consider for calibration.
+        num_groups: Optional number of groups to consider for calibration.
     """
 
-    def _get_ix(x: np.ndarray[np.datetime64], v: str, side: str):
-        return x.searchsorted(np.datetime64(v), side)
+    def _get_ix(x: NDArray[(np.datetime64,)], v: str, side: str):
+        return x.searchsorted(np.datetime64(v), side)  # type: ignore
 
     if groups is not None:
         if num_groups is None:
-            num_groups = len(np.unique(groups))
+            num_groups = len(np.unique(np.array(groups)))
         return np.array(
             [
                 [
