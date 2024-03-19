@@ -241,21 +241,28 @@ def gammastd_yxt(
 @lazycompile(
     guvectorize(
         [
-            "(int16[:], int16[:], float64, float64, float64, float64, int16[:])",
-            "(float32[:], int16[:], float64, float64, float64, float64, int16[:])",
+            "(int16[:], int16[:], float64, float64, int16[:, :], int16[:])",
+            "(float32[:], int16[:], float64, float64, int16[:, :], int16[:])",
         ],
-        "(n),(m),(),(),(),() -> (n)",
+        "(n),(m),(),(),(o, p) -> (n)",
     )
 )
-def gammastd_grp(xx, groups, num_groups, nodata, cal_start, cal_stop, yy):
+def gammastd_grp(xx, groups, num_groups, nodata, cal_indices, yy):
     """Calculate the gammastd for specific groups.
 
     This calculates gammastd across xx for indivual groups
     defined in `groups`. These need to be in ascending order from
     0 to num_groups - 1.
+
+    `cal_indices` is an array of shape (num_groups, 2) where each row
+    contains the start and end index for the calibration period for each group.
     """
     for grp in range(num_groups):
         grp_ix = groups == grp
+
+        cal_start = cal_indices[grp, 0]
+        cal_stop = cal_indices[grp, 1]
+
         pix = xx[grp_ix]
         if (pix != nodata).sum() == 0:
             yy[grp_ix] = nodata
