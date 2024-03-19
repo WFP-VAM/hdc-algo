@@ -26,8 +26,8 @@ def to_linspace(x) -> Tuple[np.ndarray, List[int]]:
 
 def get_calibration_indices(
     time: pd.DatetimeIndex,
-    start: str,
-    stop: str,
+    start: Union[str, pd.Timestamp],
+    stop: Union[str, pd.Timestamp],
     groups: Optional[Iterable[Union[int, float, str]]] = None,
     num_groups: Optional[int] = None,
 ) -> Union[Tuple[int, int], np.ndarray]:
