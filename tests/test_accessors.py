@@ -205,6 +205,12 @@ def test_algo_spi_grouped(darr, res_spi):
     np.testing.assert_array_equal(_res, res_spi)
 
 
+def test_algo_spi_grouped_2(darr, res_spi):
+    _res = darr.astype("float32").hdc.algo.spi(groups=["D1", "D1", "D1", "D1", "D1"])
+    assert isinstance(_res, xr.DataArray)
+    np.testing.assert_array_equal(_res, res_spi)
+
+
 def test_algo_spi_transp(darr, res_spi):
     _darr = darr.transpose(..., "time")
     _res = _darr.hdc.algo.spi()
@@ -214,18 +220,18 @@ def test_algo_spi_transp(darr, res_spi):
 
 def test_algo_spi_attrs_default(darr):
     _res = darr.hdc.algo.spi()
-    assert _res.attrs["spi_calibration_start"] == str(darr.time.dt.date[0].values)
-    assert _res.attrs["spi_calibration_stop"] == str(darr.time.dt.date[-1].values)
+    assert _res.attrs["spi_calibration_start"] == str(darr.time.to_index()[0])
+    assert _res.attrs["spi_calibration_stop"] == str(darr.time.to_index()[-1])
 
 
 def test_algo_spi_attrs_start(darr):
     _res = darr.hdc.algo.spi(calibration_start="2000-01-02")
-    assert _res.attrs["spi_calibration_start"] == "2000-01-11"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-11 00:00:00"
 
 
 def test_algo_spi_attrs_stop(darr):
     _res = darr.hdc.algo.spi(calibration_stop="2000-02-09")
-    assert _res.attrs["spi_calibration_stop"] == "2000-01-31"
+    assert _res.attrs["spi_calibration_stop"] == "2000-01-31 00:00:00"
 
 
 def test_algo_spi_decoupled_1(darr, res_spi):
@@ -236,8 +242,8 @@ def test_algo_spi_decoupled_1(darr, res_spi):
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-01"
-    assert _res.attrs["spi_calibration_stop"] == "2000-02-10"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-01 00:00:00"
+    assert _res.attrs["spi_calibration_stop"] == "2000-02-10 00:00:00"
 
 
 def test_algo_spi_decoupled_2(darr):
@@ -255,8 +261,8 @@ def test_algo_spi_decoupled_2(darr):
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-01"
-    assert _res.attrs["spi_calibration_stop"] == "2000-01-31"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-01 00:00:00"
+    assert _res.attrs["spi_calibration_stop"] == "2000-01-31 00:00:00"
 
 
 def test_algo_spi_decoupled_3(darr):
@@ -272,8 +278,8 @@ def test_algo_spi_decoupled_3(darr):
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-11"
-    assert _res.attrs["spi_calibration_stop"] == "2000-02-10"
+    assert _res.attrs["spi_calibration_start"] == "2000-01-11 00:00:00"
+    assert _res.attrs["spi_calibration_stop"] == str(darr.time.to_index()[-1])
 
 
 def test_algo_spi_nodata(darr):
@@ -965,6 +971,7 @@ def test_zonal_mean(darr, zones):
     assert list(x.coords["stat"].values) == ["mean", "valid"]
     np.testing.assert_almost_equal(x, res)
     assert x.dtype == res.dtype
+    assert x.nodata == darr.nodata
 
 
 def test_zonal_mean_nodata(darr, zones):
@@ -985,6 +992,7 @@ def test_zonal_mean_nodata(darr, zones):
     x = darr.hdc.zonal.mean(zones, z_ids)
     np.testing.assert_almost_equal(x, res)
     assert x.dtype == res.dtype
+    assert x.nodata == darr.nodata
 
 
 def test_zonal_mean_nodata_nan(darr, zones):
@@ -994,6 +1002,7 @@ def test_zonal_mean_nodata_nan(darr, zones):
     x = darr.hdc.zonal.mean(zones, z_ids)
     assert np.isnan(x.data[[0, -1], :, 0]).all()
     assert np.all(x.data[[0, -1], :, 1] == 0)
+    assert x.nodata == darr.nodata
 
 
 def test_zonal_mean_nodata_nan_float(darr, zones):
@@ -1015,6 +1024,7 @@ def test_zonal_mean_nodata_nan_float(darr, zones):
     x = darr.hdc.zonal.mean(zones, z_ids, dtype="float64")
     np.testing.assert_almost_equal(x, res)
     assert x.dtype == res.dtype
+    assert x.nodata == darr.nodata
 
 
 def test_zonal_zone_nodata_nan(darr, zones):
@@ -1034,6 +1044,7 @@ def test_zonal_zone_nodata_nan(darr, zones):
     x = darr.hdc.zonal.mean(zones, z_ids, dim_name="foo", dtype="float64")
     np.testing.assert_almost_equal(x, res)
     assert x.dtype == res.dtype
+    assert x.nodata == darr.nodata
 
 
 def test_zonal_dimname(darr, zones):
