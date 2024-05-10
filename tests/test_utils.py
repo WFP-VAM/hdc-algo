@@ -33,9 +33,9 @@ def test_to_linspace(input_array, expected_output):
 def test_get_calibration_indices():
     tix = pd.date_range("2010-01-01", "2010-12-31")
 
-    assert get_calibration_indices(tix, tix[0], tix[-1]) == (0, 365)
-    assert get_calibration_indices(tix, "2010-01-01", "2010-12-31") == (0, 365)
-    assert get_calibration_indices(tix, "2010-01-15", "2010-12-15") == (14, 349)
+    assert get_calibration_indices(tix, (tix[0], tix[-1])) == (0, 365)
+    assert get_calibration_indices(tix, ("2010-01-01", "2010-12-31")) == (0, 365)
+    assert get_calibration_indices(tix, ("2010-01-15", "2010-12-15")) == (14, 349)
 
     # groups
     res = np.array(
@@ -58,14 +58,17 @@ def test_get_calibration_indices():
 
     np.testing.assert_array_equal(
         get_calibration_indices(
-            tix, "2010-01-15", "2010-12-15", groups=tix.month.values - 1, num_groups=12
+            tix,
+            ("2010-01-15", "2010-12-15"),
+            groups=tix.month.values - 1,
+            num_groups=12,
         ),
         res,
     )
 
     np.testing.assert_array_equal(
         get_calibration_indices(
-            tix, "2010-01-15", "2010-12-15", groups=tix.month.values - 1
+            tix, ("2010-01-15", "2010-12-15"), groups=tix.month.values - 1
         ),
         res,
     )

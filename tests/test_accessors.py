@@ -220,30 +220,30 @@ def test_algo_spi_transp(darr, res_spi):
 
 def test_algo_spi_attrs_default(darr):
     _res = darr.hdc.algo.spi()
-    assert _res.attrs["spi_calibration_start"] == str(darr.time.to_index()[0])
-    assert _res.attrs["spi_calibration_stop"] == str(darr.time.to_index()[-1])
+    assert _res.attrs["spi_calibration_begin"] == str(darr.time.to_index()[0])
+    assert _res.attrs["spi_calibration_end"] == str(darr.time.to_index()[-1])
 
 
 def test_algo_spi_attrs_start(darr):
-    _res = darr.hdc.algo.spi(calibration_start="2000-01-02")
-    assert _res.attrs["spi_calibration_start"] == "2000-01-11 00:00:00"
+    _res = darr.hdc.algo.spi(calibration_begin="2000-01-02")
+    assert _res.attrs["spi_calibration_begin"] == "2000-01-11 00:00:00"
 
 
 def test_algo_spi_attrs_stop(darr):
-    _res = darr.hdc.algo.spi(calibration_stop="2000-02-09")
-    assert _res.attrs["spi_calibration_stop"] == "2000-01-31 00:00:00"
+    _res = darr.hdc.algo.spi(calibration_end="2000-02-09")
+    assert _res.attrs["spi_calibration_end"] == "2000-01-31 00:00:00"
 
 
 def test_algo_spi_decoupled_1(darr, res_spi):
     _res = darr.hdc.algo.spi(
-        calibration_start="2000-01-01", calibration_stop="2000-02-10"
+        calibration_begin="2000-01-01", calibration_end="2000-02-10"
     )
 
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-01 00:00:00"
-    assert _res.attrs["spi_calibration_stop"] == "2000-02-10 00:00:00"
+    assert _res.attrs["spi_calibration_begin"] == "2000-01-01 00:00:00"
+    assert _res.attrs["spi_calibration_end"] == "2000-02-10 00:00:00"
 
 
 def test_algo_spi_decoupled_2(darr):
@@ -255,14 +255,14 @@ def test_algo_spi_decoupled_2(darr):
     )
 
     _res = darr.hdc.algo.spi(
-        calibration_start="2000-01-01", calibration_stop="2000-01-31"
+        calibration_begin="2000-01-01", calibration_end="2000-01-31"
     )
 
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-01 00:00:00"
-    assert _res.attrs["spi_calibration_stop"] == "2000-01-31 00:00:00"
+    assert _res.attrs["spi_calibration_begin"] == "2000-01-01 00:00:00"
+    assert _res.attrs["spi_calibration_end"] == "2000-01-31 00:00:00"
 
 
 def test_algo_spi_decoupled_3(darr):
@@ -273,13 +273,13 @@ def test_algo_spi_decoupled_3(darr):
         ]
     )
 
-    _res = darr.hdc.algo.spi(calibration_start="2000-01-11")
+    _res = darr.hdc.algo.spi(calibration_begin="2000-01-11")
 
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
 
-    assert _res.attrs["spi_calibration_start"] == "2000-01-11 00:00:00"
-    assert _res.attrs["spi_calibration_stop"] == str(darr.time.to_index()[-1])
+    assert _res.attrs["spi_calibration_begin"] == "2000-01-11 00:00:00"
+    assert _res.attrs["spi_calibration_end"] == str(darr.time.to_index()[-1])
 
 
 def test_algo_spi_nodata(darr):
@@ -292,30 +292,30 @@ def test_algo_spi_nodata(darr):
 def test_algo_spi_decoupled_err_1(darr):
     with pytest.raises(ValueError):
         _res = darr.hdc.algo.spi(
-            calibration_start="2000-03-01",
+            calibration_begin="2000-03-01",
         )
 
 
 def test_algo_spi_decoupled_err_2(darr):
     with pytest.raises(ValueError):
         _res = darr.hdc.algo.spi(
-            calibration_stop="1999-01-01",
+            calibration_end="1999-01-01",
         )
 
 
 def test_algo_spi_decoupled_err_3(darr):
     with pytest.raises(ValueError):
         _res = darr.hdc.algo.spi(
-            calibration_start="2000-01-01",
-            calibration_stop="2000-01-01",
+            calibration_begin="2000-01-01",
+            calibration_end="2000-01-01",
         )
 
 
 def test_algo_spi_decoupled_err_4(darr):
     with pytest.raises(ValueError):
         _res = darr.hdc.algo.spi(
-            calibration_start="2000-02-01",
-            calibration_stop="2000-01-01",
+            calibration_begin="2000-02-01",
+            calibration_end="2000-01-01",
         )
 
 

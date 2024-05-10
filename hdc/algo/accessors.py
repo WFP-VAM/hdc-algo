@@ -463,8 +463,8 @@ class PixelAlgorithms(AccessorBase):
 
     def spi(
         self,
-        calibration_start: Optional[str] = None,
-        calibration_stop: Optional[str] = None,
+        calibration_begin: Optional[str] = None,
+        calibration_end: Optional[str] = None,
         nodata: Optional[Union[float, int]] = None,
         groups: Optional[Iterable[Union[int, float, str]]] = None,
         dtype="int16",
@@ -472,7 +472,7 @@ class PixelAlgorithms(AccessorBase):
         """Calculate the SPI along the time dimension.
 
         Calculates the Standardized Precipitation Index along the time dimension.
-        Optionally, a calibration start and / or stop date can be provided which
+        Optionally, a calibration begin and / or end date can be provided which
         determine the part of the timeseries used to fit the gamma distribution.
 
         `groups` can be supplied as list of group labels.
@@ -496,25 +496,25 @@ class PixelAlgorithms(AccessorBase):
 
         tix = self._obj.get_index("time")
 
-        if calibration_start is None:
-            calibration_start = tix[0]
+        if calibration_begin is None:
+            calibration_begin = tix[0]
 
-        if calibration_stop is None:
-            calibration_stop = tix[-1]
+        if calibration_end is None:
+            calibration_end = tix[-1]
 
-        if calibration_start > tix[-1:]:
-            raise ValueError("Calibration start cannot be greater than last timestamp!")
+        if calibration_begin > tix[-1:]:
+            raise ValueError("Calibration begin cannot be greater than last timestamp!")
 
-        if calibration_stop < tix[:1]:
-            raise ValueError("Calibration stop cannot be smaller than first timestamp!")
+        if calibration_end < tix[:1]:
+            raise ValueError("Calibration end cannot be smaller than first timestamp!")
 
         if groups is None:
             calstart_ix, calstop_ix = get_calibration_indices(
-                tix, calibration_start, calibration_stop
+                tix, (calibration_begin, calibration_end)
             )
 
             if calstart_ix >= calstop_ix:
-                raise ValueError("calibration_start < calibration_stop!")
+                raise ValueError("calibration_begin < calibration_end!")
 
             if abs(calstop_ix - calstart_ix) <= 1:
                 raise ValueError(
@@ -547,13 +547,13 @@ class PixelAlgorithms(AccessorBase):
             num_groups = len(keys)
 
             cal_indices = get_calibration_indices(
-                tix, calibration_start, calibration_stop, groups, num_groups
+                tix, (calibration_begin, calibration_end), groups, num_groups
             )
             # assert for mypy
             assert isinstance(cal_indices, np.ndarray)
 
             if np.any(cal_indices[:, 0] >= cal_indices[:, 1]):
-                raise ValueError("calibration_start < calibration_stop!")
+                raise ValueError("calibration_begin < calibration_end!")
 
             if np.any(np.diff(cal_indices, axis=1) <= 1):
                 raise ValueError(
@@ -576,8 +576,8 @@ class PixelAlgorithms(AccessorBase):
 
         res.attrs.update(
             {
-                "spi_calibration_start": str(tix[tix >= calibration_start][0]),
-                "spi_calibration_stop": str(tix[tix <= calibration_stop][-1]),
+                "spi_calibration_begin": str(tix[tix >= calibration_begin][0]),
+                "spi_calibration_end": str(tix[tix <= calibration_end][-1]),
             }
         )
 

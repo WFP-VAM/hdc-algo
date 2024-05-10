@@ -6,6 +6,8 @@ import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 
+DateType = Union[str, pd.Timestamp, np.datetime64]
+
 
 def to_linspace(x) -> Tuple[NDArray[(np.int16,)], List[int]]:
     """Map input array to linear space.
@@ -27,8 +29,7 @@ def to_linspace(x) -> Tuple[NDArray[(np.int16,)], List[int]]:
 
 def get_calibration_indices(
     time: pd.DatetimeIndex,
-    start: Union[str, pd.Timestamp],
-    stop: Union[str, pd.Timestamp],
+    calibration_range: Tuple[DateType, DateType],
     groups: Optional[Iterable[Union[int, float, str]]] = None,
     num_groups: Optional[int] = None,
 ) -> Union[Tuple[int, int], np.ndarray]:
@@ -48,8 +49,9 @@ def get_calibration_indices(
         groups: Optional groups to consider for calibration.
         num_groups: Optional number of groups to consider for calibration.
     """
+    begin, end = calibration_range
 
-    def _get_ix(x: NDArray[(np.datetime64,)], v: str, side: str):
+    def _get_ix(x: NDArray[(np.datetime64,)], v: DateType, side: str):
         return x.searchsorted(np.datetime64(v), side)  # type: ignore
 
     if groups is not None:
@@ -58,12 +60,12 @@ def get_calibration_indices(
         return np.array(
             [
                 [
-                    _get_ix(time[groups == ix].values, start, "left"),
-                    _get_ix(time[groups == ix].values, stop, "right"),
+                    _get_ix(time[groups == ix].values, begin, "left"),
+                    _get_ix(time[groups == ix].values, end, "right"),
                 ]
                 for ix in range(num_groups)
             ],
             dtype="int16",
         )
 
-    return _get_ix(time.values, start, "left"), _get_ix(time.values, stop, "right")
+    return _get_ix(time.values, begin, "left"), _get_ix(time.values, end, "right")
