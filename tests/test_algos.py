@@ -169,7 +169,8 @@ def test_gammastd_selfit_2(ts):
 def test_gammastd_grp(ts):
     tts = np.repeat(ts, 5).astype("float32")
     grps = np.tile(np.arange(5), 10).astype("int16")
-    xspi = gammastd_grp(tts, grps, np.unique(grps).size, 0, 0, 10)
+    indices = np.array([[0, 10]] * 10, dtype="int16")
+    xspi = gammastd_grp(tts, grps, np.unique(grps).size, 0, indices)
 
     res = [
         -0.38238713,
