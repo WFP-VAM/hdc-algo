@@ -391,7 +391,7 @@ def mk_sens_slope(x):
 def mann_kendall_trend_yxt(x):
     """Calculate Mann-Kendall trend over y, x, t array.
 
-    This function calculates MK tend for each pixel over a
+    This function calculates MK trend for each pixel over a
     3-d y, x, t array and returns an array of shape (y, x, 4)
     containing Kendall's Tau, P value, Sen's slope and a trend indicator
     in the last array dimension.
@@ -410,9 +410,8 @@ def mann_kendall_trend_yxt(x):
             p, h = mk_p_value(z)
             slope, _ = mk_sens_slope(x[yix, xix, 0:ts])
 
-            if not h:
-                trend = 0
-            else:
+            trend = 0
+            if h:
                 if z > 0:
                     trend = 1
                 if z < 0:
