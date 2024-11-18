@@ -146,7 +146,7 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]

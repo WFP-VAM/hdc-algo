@@ -34,7 +34,7 @@ def ws2dgu(y, lmda, nodata, out):
 
         if n > 1:
             z = ws2d(y, lmda, w)
-            np.round_(z, 0, out)
+            np.round(z, 0, out)
         else:
             out[:] = y[:]
     else:

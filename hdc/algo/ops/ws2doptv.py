@@ -92,7 +92,7 @@ def ws2doptv(y, nodata, llas, out, lopt):
 
         lopt[0] = pow(10, lamids[k])
         z = ws2d(y, lopt[0], w)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
     else:
         out[:] = y[:]
         lopt[0] = 0.0

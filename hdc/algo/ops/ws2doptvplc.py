@@ -161,7 +161,7 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -226,7 +226,7 @@ def ws2doptvplc_tyx(tyx, p, nodata):
 
                 llas = _llas[0] if lc > 0.5 else _llas[1]
                 _xx, _lopts = _ws2doptvp(xx, ww, p, llas)
-                np.round_(_xx, 0, zz[:, rr, cc])
+                np.round(_xx, 0, zz[:, rr, cc])
                 lopts[rr, cc] = _lopts
 
     return zz, lopts

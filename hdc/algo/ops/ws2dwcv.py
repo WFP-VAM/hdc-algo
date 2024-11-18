@@ -114,7 +114,7 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
 
         z[:] = 0.0
         z = ws2d(y, lopt[0], robust_weights)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]

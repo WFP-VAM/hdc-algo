@@ -89,7 +89,7 @@ def ws2dgu(y, lmda, nodata, out):
 
     if n > 1:
         z = ws2d(y, lmda, w)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
     else:
         out[:] = y[:]
 
@@ -142,7 +142,7 @@ def ws2dpgu(y, lmda, nodata, p, out):
                 z[:] = znew[:]
 
             z = ws2d(y, lmda, ww)
-            np.round_(z, 0, out)
+            np.round(z, 0, out)
 
         else:
             out[:] = y[:]
@@ -230,7 +230,7 @@ def ws2doptv(y, nodata, llas, out, lopt):
 
         lopt[0] = pow(10, lamids[k])
         z = ws2d(y, lopt[0], w)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
     else:
         out[:] = y[:]
         lopt[0] = 0.0
@@ -369,7 +369,7 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -517,7 +517,7 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -628,7 +628,7 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
 
         z[:] = 0.0
         z = ws2d(y, lopt[0], robust_weights)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -757,7 +757,7 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]
