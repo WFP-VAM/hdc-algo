@@ -232,7 +232,7 @@ def gammastd_yxt(
             s = gammastd(xt, nodata, cal_start, cal_stop)
             if (s != nodata).sum() > 0:
                 s = s * 1000
-                np.round_(s, 0, s)
+                np.round(s, 0, s)
                 y[ri, ci, :] = s[:]
 
     return y
@@ -271,7 +271,7 @@ def gammastd_grp(xx, groups, num_groups, nodata, cal_indices, yy):
         if (res != nodata).sum() > 0:
             valid_ix = res != nodata
             res[valid_ix] = res[valid_ix] * 1000
-            np.round_(res, 0, res)
+            np.round(res, 0, res)
         yy[grp_ix] = res[:]
 
 

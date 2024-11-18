@@ -133,7 +133,7 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        np.round_(z, 0, out)
+        np.round(z, 0, out)
 
     else:
         out[:] = y[:]
@@ -252,6 +252,6 @@ def _ws2dwcvp(y, w, p, llas, robust):
         z[0:m] = znew[0:m]
 
     z = ws2d(y, lopt, ww)
-    z = np.round_(z, 0)
+    z = np.round(z, 0)
 
     return z, lopt

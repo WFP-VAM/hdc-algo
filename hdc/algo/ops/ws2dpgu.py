@@ -58,7 +58,7 @@ def ws2dpgu(y, lmda, nodata, p, out):
                 z[:] = znew[:]
 
             z = ws2d(y, lmda, ww)
-            np.round_(z, 0, out)
+            np.round(z, 0, out)
 
         else:
             out[:] = y[:]
