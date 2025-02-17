@@ -138,22 +138,55 @@ class DekadPeriod(Period):
 
 @xarray.register_dataset_accessor("season")
 @xarray.register_dataarray_accessor("season")
-class SeasonPeriod(Period):
+class SeasonPeriod(AccessorTimeBase):
     """Accessor class for handling seasonal indexing of an xarray object."""
 
-    def label(self, season_ranges: List[Tuple[int, int]]) -> List:
+    @property
+    def _tseries(self):
+        return self._obj.time.to_series()
+
+    def label(
+        self, season_ranges: List[Tuple[int, int]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
         """
         Assigns a seasonal label (e.g., '2021-01') to each time step in the xarray object.
-
-        Args:
-            season_ranges (List[Tuple[int, int]]): List of (start, end) dekads defining seasons.
-
-        Returns:
-            xarray.DataArray: A new DataArray with an added 'season' coordinate.
         """
-        season = Season(season_ranges=season_ranges)
+        if "time" not in self._obj.coords:
+            raise ValueError("The xarray object must have a 'time' coordinate.")
 
-        return self._tseries.apply(lambda date: season.season_label(date)).to_xarray()
+        return self._tseries.apply(
+            lambda date: Season(date, season_ranges).id
+        ).to_xarray()
+
+    def idx(
+        self, season_range: Optional[List[Tuple[int, int]]] = None
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Returns the index of the season within the year."""
+        return self._tseries.apply(
+            lambda x: Season(x, season_range).season_index(Dekad(x).yidx)
+        ).to_xarray()
+
+    def ndays(
+        self, season_range: Optional[List[Tuple[int, int]]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Returns the number of days in each season."""
+        return self._tseries.apply(lambda x: Season(x, season_range).ndays).to_xarray()
+
+    def start_date(
+        self, season_range: Optional[List[Tuple[int, int]]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Returns the start date of each season."""
+        return self._tseries.apply(
+            lambda x: Season(x, season_range).start_date
+        ).to_xarray()
+
+    def end_date(
+        self, season_range: Optional[List[Tuple[int, int]]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Returns the end date of each season."""
+        return self._tseries.apply(
+            lambda x: Season(x, season_range).end_date
+        ).to_xarray()
 
 
 class IterativeAggregation(AccessorBase):
