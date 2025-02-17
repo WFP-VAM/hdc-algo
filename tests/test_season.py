@@ -1,6 +1,4 @@
-from datetime import datetime
-
-import pandas as pd
+from datetime import datetime, timedelta
 
 from hdc.algo.season import Season
 
@@ -8,75 +6,91 @@ from hdc.algo.season import Season
 
 
 def test_season():
-    # Test initialization and basic attributes
-    season = Season([(1, 10), (11, 20), (21, 30)])
+    # Define season ranges and corresponding dates
+    season_ranges = [(1, 10), (11, 20), (21, 30)]
+    season_dates = [
+        datetime(2022, 1, 10),  # Season 1
+        datetime(2022, 4, 15),  # Season 2
+        datetime(2022, 7, 25),  # Season 3
+    ]
 
-    # Check season lengths
-    assert len(season) == 3
-    assert season.season_lengths == [10, 10, 10]
-
-    # Test raw season ranges
-    assert season.raw == [(1, 10), (11, 20), (21, 30)]
+    # Initialize Season instances with corresponding dates
+    seasons = [Season(date, season_ranges) for date in season_dates]
 
     # Test the string representation and hashing
     assert (
-        repr(season)
-        == "Season(season_ranges=[(1, 10), (11, 20), (21, 30)], season_lengths=[10, 10, 10])"
+        repr(seasons[0])
+        == "Season(season_range=[(1, 10), (11, 20), (21, 30)], id=2022-01)"
     )
-    assert hash(season) == hash(tuple(season.season_ranges))
+    assert hash(seasons[0]) == hash(seasons[0].id)
 
     # Test equality
-    season_2 = Season([(1, 10), (11, 20), (21, 30)])
-    assert season == season_2
-    assert season != Season([(1, 10), (11, 20)])
-    assert season != Season([(1, 5), (6, 10), (11, 15)])
+    assert seasons[0] == Season(datetime(2022, 1, 10), season_ranges)
+    assert seasons[0] != Season(datetime(2022, 5, 10), season_ranges)
+    assert seasons[0] != Season(datetime(2022, 12, 10), season_ranges)
 
-    # Test season index (dekad of the year)
-    assert season.season_index(5) == 1
-    assert season.season_index(15) == 2
-    assert season.season_index(25) == 3
-    assert season.season_index(36) is None
-    assert season.season_index(37) is None
-
-    # Test season idx method
-    assert season.idx(datetime(2022, 3, 10)) == 1
-    assert season.idx(datetime(2022, 6, 15)) == 2
-    assert season.idx(datetime(2022, 8, 25)) == 3
-    assert season.idx(datetime(2022, 12, 3)) is None
-
-    # Test season label
-    assert season.season_label(datetime(2022, 3, 10)) == "2022-01"
-    assert season.season_label(datetime(2022, 6, 15)) == "2022-02"
-    assert season.season_label(datetime(2022, 8, 25)) == "2022-03"
-    assert pd.isna(season.season_label(datetime(2022, 12, 3)))
+    # Test id
+    assert seasons[0].id == "2022-01"
+    assert seasons[1].id == "2022-02"
+    assert seasons[2].id == "2022-03"
+    assert Season(datetime(2022, 12, 10), season_ranges).id == "OoS"
 
     # Test cross-year season handling
-    season_cross_year = Season([(27, 15)])
-    assert len(season_cross_year) == 1
-    assert season_cross_year.season_lengths == [36 - 27 + 1 + 15]
-    assert season_cross_year != Season([(15, 27)])
-    assert season_cross_year.season_index(30) == 1
-    assert season_cross_year.season_index(3) == 1
-    assert season_cross_year.season_index(22) is None
-    assert season_cross_year.idx(datetime(2024, 11, 12)) == 1
-    assert season_cross_year.idx(datetime(2025, 3, 28)) == 1
-    assert season_cross_year.idx(datetime(2024, 6, 1)) is None
-    assert season_cross_year.season_label(datetime(2024, 11, 12)) == "2024-01"
-    assert season_cross_year.season_label(datetime(2025, 3, 28)) == "2024-01"
-    assert pd.isna(season_cross_year.season_label(datetime(2024, 6, 1)))
+    season_cross_year1 = Season(datetime(2024, 11, 12), [(28, 15)])
+    season_cross_year2 = Season(datetime(2025, 2, 9), [(27, 15)])
+    assert season_cross_year1.id == "2024-01"
+    assert season_cross_year2.id == "2024-01"
+    assert season_cross_year1.season_index(30) == 1
+    assert season_cross_year2.season_index(30) == 1
+    assert season_cross_year1.season_index(3) == 1
+    assert season_cross_year2.season_index(3) == 1
+    assert season_cross_year1.season_index(22) is None
+    assert season_cross_year2.season_index(22) is None
+    assert (season_cross_year1 + 1).id == "2025-01"
+    assert (season_cross_year2 + 1).id == "2025-01"
+    assert (season_cross_year1 - 1).id == "2023-01"
+    assert (season_cross_year2 - 1).id == "2023-01"
+    assert season_cross_year1 - season_cross_year2 == 0
 
     # Test invalid season ranges (should raise ValueError)
     try:
-        Season([(1, 10), (5, 15)])  # Overlapping ranges
+        Season(datetime(2022, 1, 10), [(1, 10), (5, 15)])  # Overlapping ranges
     except ValueError as e:
         assert str(e) == "Season range (1, 10) overlaps with (5, 15)."
 
     try:
-        Season([(30, 5), (5, 15)])  # Overlapping ranges
+        Season(datetime(2022, 1, 10), [(30, 5), (5, 15)])  # Overlapping ranges
     except ValueError as e:
         assert str(e) == "Season range (5, 15) overlaps with (30, 5)."
 
     try:
-        Season([(40, 20)])  # Invalid dekad range
+        Season(datetime(2022, 1, 10), [(40, 20)])  # Invalid dekad range
     except ValueError as e:
         assert str(e) == "Invalid season range: (40, 20). Dekads must be in [1, 36]."
+
+    # Test arithmetic operations
+    new_season = seasons[0] + 1
+    assert new_season.id == "2023-01"
+
+    new_season = seasons[0] - 1
+    assert new_season.id == "2021-01"
+
+    year_difference = seasons[1] - seasons[0]
+    assert year_difference == 0
+
+    year_difference = seasons[2] - seasons[0]
+    assert year_difference == 0
+
+    # Test date range and number of days
+    assert seasons[0].date_range == (
+        datetime(2022, 1, 1),
+        datetime(2022, 4, 11) - timedelta(microseconds=1),
+    )
+    assert seasons[0].ndays == 100
+
+    # Test cross-year season date range
+    assert season_cross_year1.date_range == (
+        datetime(2024, 10, 1),
+        datetime(2025, 6, 1) - timedelta(microseconds=1),
+    )
+    assert season_cross_year1.ndays == 243
