@@ -53,32 +53,39 @@ class Season:
             )
 
     def __repr__(self):
+        """Return string representation."""
         return f"Season(season_range={self.season_range}, id={self._seas})"
 
     def __hash__(self):
+        """Return Hash."""
         return hash(self._seas)
 
     def __eq__(self, other):
+        """Check equality with other Season or int."""
         if not isinstance(other, Season):
             return False
         return self._seas == other._seas
 
     def __lt__(self, other):
+        """Check for less than inequality with other Season or int."""
         if not isinstance(other, Season):
             return NotImplemented
         return self._seas < other._seas
 
     def __le__(self, other):
+        """Check for less than or equal inequality with other Season or int."""
         if not isinstance(other, Season):
             return NotImplemented
         return self._seas <= other._seas
 
     def __gt__(self, other):
+        """Check for greater than inequality with other Season or int."""
         if not isinstance(other, Season):
             return NotImplemented
         return self._seas > other._seas
 
     def __ge__(self, other):
+        """Check for greater than or equal inequality with other Season or int."""
         if not isinstance(other, Season):
             return NotImplemented
         return self._seas >= other._seas
@@ -90,7 +97,7 @@ class Season:
 
     def season_index(self, dekad_of_year: int) -> Optional[int]:
         """
-        Returns the season index (e.g., 1, 2, etc.) for the given dekad of the year.
+        Return the season index (e.g., 1, 2, etc.) for the given dekad of the year.
 
         Args:
             dekad_of_year (int): Dekad index (1-36).
@@ -109,7 +116,7 @@ class Season:
 
     def season_label(self, date: Union[datetime]) -> int:
         """
-        Returns the season label (e.g., 202101, 202102) for the provided date.
+        Return the season label (e.g., 202101, 202102) for the provided date.
 
         For cross-year seasons (e.g., Oct-May), the label uses the starting year.
 
@@ -135,9 +142,7 @@ class Season:
         return -1
 
     def validate_season_ranges(self):
-        """
-        Ensures that the season ranges are valid (e.g., dekads are within 1-36) and do not overlap.
-        """
+        """Ensure that the season ranges are valid and mutually exclusive."""
         for i, (start, end) in enumerate(self.season_range):
             if not (1 <= start <= 36 and 1 <= end <= 36):
                 raise ValueError(

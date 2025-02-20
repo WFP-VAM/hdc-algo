@@ -148,9 +148,7 @@ class SeasonPeriod(AccessorTimeBase):
     def label(
         self, season_ranges: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
-        """
-        Assigns a seasonal label (e.g., 202101) to each time step in the xarray object.
-        """
+        """Assign a seasonal label to each time step in the xarray object."""
         if "time" not in self._obj.coords:
             raise ValueError("The xarray object must have a 'time' coordinate.")
 
@@ -161,7 +159,7 @@ class SeasonPeriod(AccessorTimeBase):
     def idx(
         self, season_range: Optional[List[Tuple[int, int]]] = None
     ) -> Union[xarray.DataArray, xarray.Dataset]:
-        """Returns the index of the season within the year."""
+        """Return the index of the season within the year."""
         return self._tseries.apply(
             lambda x: Season(x, season_range).season_index(Dekad(x).yidx)
         ).to_xarray()
@@ -169,13 +167,13 @@ class SeasonPeriod(AccessorTimeBase):
     def ndays(
         self, season_range: Optional[List[Tuple[int, int]]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
-        """Returns the number of days in each season."""
+        """Return the number of days in each season."""
         return self._tseries.apply(lambda x: Season(x, season_range).ndays).to_xarray()
 
     def start_date(
         self, season_range: Optional[List[Tuple[int, int]]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
-        """Returns the start date of each season."""
+        """Return the start date of each season."""
         return self._tseries.apply(
             lambda x: Season(x, season_range).start_date
         ).to_xarray()
@@ -183,7 +181,7 @@ class SeasonPeriod(AccessorTimeBase):
     def end_date(
         self, season_range: Optional[List[Tuple[int, int]]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
-        """Returns the end date of each season."""
+        """Return the end date of each season."""
         return self._tseries.apply(
             lambda x: Season(x, season_range).end_date
         ).to_xarray()
