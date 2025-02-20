@@ -13,6 +13,8 @@ from hdc.algo import ops
 from hdc.algo.accessors import MissingTimeError
 from hdc.algo.ops.ws2d import ws2d
 
+SEASON_RANGES = [(1, 3), (4, 6)]
+
 
 def to_da(xx):
     return xr.DataArray(
@@ -142,6 +144,52 @@ def test_period_labels_dekad_single(darr):
 def test_period_exception(darr):
     with pytest.raises(TypeError):
         _ = darr.x.dekad
+
+
+def test_season_label(darr):
+    assert isinstance(darr.season.label(SEASON_RANGES), xr.DataArray)
+    np.testing.assert_array_equal(
+        darr.season.label(SEASON_RANGES), [200001, 200001, 200001, 200001, 200002]
+    )
+
+
+def test_season_idx(darr):
+    assert isinstance(darr.time.season.idx(SEASON_RANGES), xr.DataArray)
+    np.testing.assert_array_equal(darr.season.idx(SEASON_RANGES), [1, 1, 1, 1, 2])
+
+
+def test_season_ndays(darr):
+    assert isinstance(darr.time.season.ndays(SEASON_RANGES), xr.DataArray)
+    np.testing.assert_equal(
+        darr.season.ndays(SEASON_RANGES).values, np.array([31, 31, 31, 31, 29])
+    )
+
+
+def test_season_start_date(darr):
+    assert isinstance(darr.time.season.start_date(SEASON_RANGES), xr.DataArray)
+    np.testing.assert_equal(
+        darr.season.start_date(SEASON_RANGES).values,
+        np.array(
+            ["2000-01-01T00:00:00.000000000"] * 4 + ["2000-02-01T00:00:00.000000000"],
+            dtype="datetime64[ns]",
+        ),
+    )
+
+
+def test_season_end_date(darr):
+    assert isinstance(darr.time.season.end_date(SEASON_RANGES), xr.DataArray)
+    np.testing.assert_equal(
+        darr.season.end_date(SEASON_RANGES).values,
+        np.array(
+            ["2000-01-31T23:59:59.999999000"] * 4 + ["2000-02-29T23:59:59.999999000"],
+            dtype="datetime64[ns]",
+        ),
+    )
+
+
+def test_season_exception(darr):
+    with pytest.raises(ValueError):
+        _ = darr.x.season.label(SEASON_RANGES)
 
 
 def test_algo_lroo(darr):

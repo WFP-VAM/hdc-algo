@@ -45,17 +45,17 @@ class AccessorTimeBase(AccessorBase):
 
     def __init__(self, xarray_obj):
         """Construct with DataArray|Dataset."""
-        if not np.issubdtype(xarray_obj, np.datetime64):
-            raise TypeError(
-                "'This accessor is only available for "
-                "DataArray with datetime64 dtype"
-            )
-
         if not hasattr(xarray_obj, "time"):
             raise ValueError("Data array is missing 'time' accessor!")
 
         if "time" not in xarray_obj.dims:
             xarray_obj = xarray_obj.expand_dims("time")
+
+        if not np.issubdtype(xarray_obj.time, np.datetime64):
+            raise TypeError(
+                "'This accessor is only available for "
+                "DataArray with datetime64 dtype"
+            )
         self._obj = xarray_obj
 
         super().__init__(xarray_obj)
@@ -149,7 +149,7 @@ class SeasonPeriod(AccessorTimeBase):
         self, season_ranges: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
         """
-        Assigns a seasonal label (e.g., '2021-01') to each time step in the xarray object.
+        Assigns a seasonal label (e.g., 202101) to each time step in the xarray object.
         """
         if "time" not in self._obj.coords:
             raise ValueError("The xarray object must have a 'time' coordinate.")
