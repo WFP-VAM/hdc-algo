@@ -20,7 +20,7 @@ def test_season():
     # Test the string representation and hashing
     assert (
         repr(seasons[0])
-        == "Season(season_range=[(1, 10), (11, 20), (21, 30)], id=2022-01)"
+        == "Season(season_range=[(1, 10), (11, 20), (21, 30)], id=202201)"
     )
     assert hash(seasons[0]) == hash(seasons[0].id)
 
@@ -30,26 +30,26 @@ def test_season():
     assert seasons[0] != Season(datetime(2022, 12, 10), season_ranges)
 
     # Test id
-    assert seasons[0].id == "2022-01"
-    assert seasons[1].id == "2022-02"
-    assert seasons[2].id == "2022-03"
-    assert Season(datetime(2022, 12, 10), season_ranges).id == "OoS"
+    assert seasons[0].id == 202201
+    assert seasons[1].id == 202202
+    assert seasons[2].id == 202203
+    assert Season(datetime(2022, 12, 10), season_ranges).id == -1
 
     # Test cross-year season handling
     season_cross_year1 = Season(datetime(2024, 11, 12), [(28, 15)])
     season_cross_year2 = Season(datetime(2025, 2, 9), [(27, 15)])
-    assert season_cross_year1.id == "2024-01"
-    assert season_cross_year2.id == "2024-01"
+    assert season_cross_year1.id == 202401
+    assert season_cross_year2.id == 202401
     assert season_cross_year1.season_index(30) == 1
     assert season_cross_year2.season_index(30) == 1
     assert season_cross_year1.season_index(3) == 1
     assert season_cross_year2.season_index(3) == 1
     assert season_cross_year1.season_index(22) is None
     assert season_cross_year2.season_index(22) is None
-    assert (season_cross_year1 + 1).id == "2025-01"
-    assert (season_cross_year2 + 1).id == "2025-01"
-    assert (season_cross_year1 - 1).id == "2023-01"
-    assert (season_cross_year2 - 1).id == "2023-01"
+    assert (season_cross_year1 + 1).id == 202501
+    assert (season_cross_year2 + 1).id == 202501
+    assert (season_cross_year1 - 1).id == 202301
+    assert (season_cross_year2 - 1).id == 202301
     assert season_cross_year1 - season_cross_year2 == 0
 
     # Test invalid season ranges (should raise ValueError)
@@ -70,10 +70,10 @@ def test_season():
 
     # Test arithmetic operations
     new_season = seasons[0] + 1
-    assert new_season.id == "2023-01"
+    assert new_season.id == 202301
 
     new_season = seasons[0] - 1
-    assert new_season.id == "2021-01"
+    assert new_season.id == 202101
 
     year_difference = seasons[1] - seasons[0]
     assert year_difference == 0
