@@ -116,9 +116,8 @@ def test_gammastd(ts):
 
 def test_gammastd_nodata(ts):
     nodata = -9999.0
-    ts_nodata = [*ts]
-    ts_nodata[2] = nodata
-    xspi = gammastd.py_func(ts_nodata, nodata, 0, 10)
+    ts[2] = nodata
+    xspi = gammastd.py_func(ts, nodata, 0, 10)
     valid_ix = xspi != nodata
     xspi[valid_ix] = xspi[valid_ix] * 1000
 
