@@ -138,7 +138,7 @@ class DekadPeriod(Period):
 
 @xarray.register_dataset_accessor("season")
 @xarray.register_dataarray_accessor("season")
-class Season(AccessorTimeBase):
+class SeasonalAccessor(AccessorTimeBase):
     """Accessor class for handling seasonal indexing of an xarray object."""
 
     @property
