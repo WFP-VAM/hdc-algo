@@ -1,6 +1,6 @@
 """Season helper class."""
 
-from datetime import datetime, timedelta
+import datetime
 from typing import List, Optional, Tuple, Union, overload
 
 import numpy as np
@@ -24,7 +24,7 @@ class Season:
 
     def __init__(
         self,
-        date: Union[str, int, datetime, "Dekad"],
+        date: Union[str, int, datetime.date, datetime.datetime, "Dekad"],
         season_range: List[Tuple[int, int]],
     ):
         """
@@ -45,7 +45,9 @@ class Season:
             self._seas = self.season_label(dekad_date.start_date)
         elif isinstance(date, int):
             self._seas = date
-        elif isinstance(date, (datetime, date)):
+        elif isinstance(date, datetime.date):
+            self._seas = self.season_label(date)
+        elif isinstance(date, datetime.datetime):
             self._seas = self.season_label(date)
         else:
             raise ValueError(
@@ -114,7 +116,7 @@ class Season:
                     return i + 1
         return None
 
-    def season_label(self, date: Union[datetime]) -> int:
+    def season_label(self, date: Union[datetime.date, datetime.datetime]) -> int:
         """
         Return the season label (e.g., 202101, 202102) for the provided date.
 
@@ -160,7 +162,7 @@ class Season:
                         )
 
     @property
-    def start_date(self) -> datetime:
+    def start_date(self) -> datetime.datetime:
         """Start date as python ``datetime``."""
         if self._seas == -1:
             return np.nan
@@ -170,7 +172,7 @@ class Season:
         return (Dekad(f"{year}01d1") + start_dekad - 1).start_date
 
     @property
-    def end_date(self) -> datetime:
+    def end_date(self) -> datetime.datetime:
         """End date as python ``datetime``."""
         if self._seas == -1:
             return np.nan
@@ -180,7 +182,7 @@ class Season:
         return (Dekad(f"{year}01d1") + end_dekad - 1).end_date
 
     @property
-    def date_range(self) -> Tuple[datetime, datetime]:
+    def date_range(self) -> Tuple[datetime.datetime, datetime.datetime]:
         """Start and end dates as python ``datetime``."""
         return self.start_date, self.end_date
 
@@ -189,7 +191,7 @@ class Season:
         """Number of days in season."""
         if isinstance(self.start_date, float):
             return -1
-        return (self.end_date - self.start_date + timedelta(microseconds=1)).days
+        return (self.end_date - self.start_date + datetime.timedelta(microseconds=1)).days
 
     def __radd__(self, n: int) -> "Season":
         """Addition with integer (adds years)."""

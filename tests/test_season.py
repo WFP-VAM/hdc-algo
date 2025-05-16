@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from hdc.algo.season import Season
 
@@ -25,9 +25,9 @@ def test_season():
     assert hash(seasons[0]) == hash(seasons[0].id)
 
     # Test equality
-    assert seasons[0] == Season(datetime(2022, 1, 10), season_ranges)
-    assert seasons[0] != Season(datetime(2022, 5, 10), season_ranges)
-    assert seasons[0] != Season(datetime(2022, 12, 10), season_ranges)
+    assert seasons[0] == Season(date(2022, 1, 10), season_ranges)
+    assert seasons[0] != Season(date(2022, 5, 10), season_ranges)
+    assert seasons[0] != Season(date(2022, 12, 10), season_ranges)
 
     # Test id
     assert seasons[0].id == 202201
@@ -36,8 +36,8 @@ def test_season():
     assert Season(datetime(2022, 12, 10), season_ranges).id == -1
 
     # Test cross-year season handling
-    season_cross_year1 = Season(datetime(2024, 11, 12), [(28, 15)])
-    season_cross_year2 = Season(datetime(2025, 2, 9), [(27, 15)])
+    season_cross_year1 = Season(date(2024, 11, 12), [(28, 15)])
+    season_cross_year2 = Season(date(2025, 2, 9), [(27, 15)])
     assert season_cross_year1.id == 202401
     assert season_cross_year2.id == 202401
     assert season_cross_year1.season_index(30) == 1
