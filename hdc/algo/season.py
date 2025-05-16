@@ -167,7 +167,9 @@ class Season:
                 return int(f"{date.year - 1}{season_idx:02d}")
         return -1
 
-    def validate_season_ranges(self, season_range: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    def validate_season_ranges(
+        self, season_range: List[Tuple[int, int]]
+    ) -> List[Tuple[int, int]]:
         """
         Ensure that the season ranges are valid, sorted, and mutually exclusive.
 
