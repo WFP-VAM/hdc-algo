@@ -55,8 +55,8 @@ class Season:
         Example:
             season_range = [(7, 17), (29, 6)]  # main season: Mar–Jun, second season: Oct–Feb
         """
-        self._season_range = season_range
-        self.validate_season_ranges()
+        season_range_valid = self.validate_season_ranges(season_range)
+        self._season_range = season_range_valid
 
         if isinstance(date, (str, datetime.date, datetime.datetime, Dekad)):
             self._seas = self.season_label(date)
@@ -167,7 +167,7 @@ class Season:
                 return int(f"{date.year - 1}{season_idx:02d}")
         return -1
 
-    def validate_season_ranges(self):
+    def validate_season_ranges(self, season_range: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         """
         Ensure that the season ranges are valid, sorted, and mutually exclusive.
 
@@ -177,18 +177,18 @@ class Season:
         - Ranges must not overlap.
         """
         # Check validity of dekads
-        for start, end in self._season_range:
+        for start, end in season_range:
             if not (1 <= start <= 36) or not (1 <= end <= 36):
                 raise ValueError(
                     f"Invalid season range: ({start}, {end}). Dekads must be in [1, 36]."
                 )
 
         # Sort season ranges by start dekad
-        self._season_range = sorted(self._season_range, key=lambda x: x[0])
+        season_range = sorted(season_range, key=lambda x: x[0])
 
         # Convert ranges to sets and check for overlaps
         dekad_sets = []
-        for start, end in self._season_range:
+        for start, end in season_range:
             if start <= end:
                 dekads = set(range(start, end + 1))
             else:
@@ -200,8 +200,9 @@ class Season:
                 s2 = dekad_sets[j]
                 if s1 & s2:
                     raise ValueError(
-                        f"Season range {self._season_range[i]} overlaps with {self._season_range[j]}."
+                        f"Season range {season_range[i]} overlaps with {season_range[j]}."
                     )
+        return season_range
 
     @property
     def start_date(self) -> datetime.datetime:
