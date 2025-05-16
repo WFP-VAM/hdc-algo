@@ -20,7 +20,7 @@ class Season:
     If the date doesn't fall into any specified range, that data is referred to as -1.
     """
 
-    __slots__ = ("_seas", "season_range")
+    __slots__ = ("_seas", "_season_range")
 
     def __init__(
         self,
@@ -35,7 +35,7 @@ class Season:
             season_range (List[Tuple[int, int]]): List of (start_dekad, end_dekad) tuples defining
                 seasons.
         """
-        self.season_range = season_range
+        self._season_range = season_range
         self.validate_season_ranges()
 
         if isinstance(date, Dekad):
@@ -50,9 +50,7 @@ class Season:
         elif isinstance(date, datetime.datetime):
             self._seas = self.season_label(date)
         else:
-            raise ValueError(
-                "Invalid date format. Must be a string, datetime, date, or Dekad."
-            )
+            raise ValueError("Invalid date format. Must be a string, datetime, date, or Dekad.")
 
     def __repr__(self):
         """Return string representation."""
@@ -94,8 +92,13 @@ class Season:
 
     @property
     def id(self) -> int:
-        """Returns the unique string representation of the season."""
+        """Returns the unique integer representation of the season."""
         return self._seas
+    
+    @property
+    def season_range(self) -> List[Tuple[int, int]]:
+        """Expose the season range as a read-only property."""
+        return self._season_range
 
     def season_index(self, dekad_of_year: int) -> int:
         """
@@ -107,7 +110,7 @@ class Season:
         Returns:
             int: Season index or None if no match.
         """
-        for i, (start, end) in enumerate(self.season_range):
+        for i, (start, end) in enumerate(self._season_range):
             if start <= end:  # Normal case
                 if start <= dekad_of_year <= end:
                     return i + 1
@@ -130,29 +133,28 @@ class Season:
         """
         dekad = Dekad(date).yidx
         season_idx = self.season_index(dekad)
-        if season_idx is None:
-            return -1
 
-        # Determine correct reference year for cross-year seasons
-        for start, end in self.season_range:
-            if start <= end:  # Normal case
-                if start <= dekad <= end:
+        if season_idx != -1:
+            # Determine correct reference year for cross-year seasons
+            for start, end in self._season_range:
+                if start <= end:  # Normal case
+                    if start <= dekad <= end:
+                        return int(f"{date.year}{season_idx:02d}")
+                if dekad >= start:  # Cross-year case
                     return int(f"{date.year}{season_idx:02d}")
-            if dekad >= start:  # Cross-year case
-                return int(f"{date.year}{season_idx:02d}")
-            return int(f"{date.year - 1}{season_idx:02d}")
+                return int(f"{date.year - 1}{season_idx:02d}")
         return -1
 
     def validate_season_ranges(self):
         """Ensure that the season ranges are valid and mutually exclusive."""
-        for i, (start, end) in enumerate(self.season_range):
+        for i, (start, end) in enumerate(self._season_range):
             if not (1 <= start <= 36 and 1 <= end <= 36):
                 raise ValueError(
                     f"Invalid season range: ({start}, {end}). Dekads must be in [1, 36]."
                 )
 
             # Check for overlaps with previous ranges
-            for j, (start2, other2) in enumerate(self.season_range):
+            for j, (start2, other2) in enumerate(self._season_range):
                 if i != j:  # Avoid comparing the season with itself
                     if (start <= other2 and end >= start2) or (
                         start < start2 and end >= other2
@@ -168,8 +170,8 @@ class Season:
             return np.nan
         year = self._seas // 100
         season_idx = self._seas % 100
-        start_dekad = self.season_range[season_idx - 1][0]
-        return (Dekad(f"{year}01d1") + start_dekad - 1).start_date
+        start_dekad = self._season_range[season_idx - 1][0]
+        return Dekad(36 * year + start_dekad - 1).start_date
 
     @property
     def end_date(self) -> datetime.datetime:
@@ -177,9 +179,9 @@ class Season:
         if self._seas == -1:
             return np.nan
         season_idx = self._seas % 100
-        start_dekad, end_dekad = self.season_range[season_idx - 1]
+        start_dekad, end_dekad = self._season_range[season_idx - 1]
         year = self._seas // 100 + int(end_dekad < start_dekad)
-        return (Dekad(f"{year}01d1") + end_dekad - 1).end_date
+        return Dekad(36 * year + end_dekad - 1).end_date
 
     @property
     def date_range(self) -> Tuple[datetime.datetime, datetime.datetime]:
@@ -195,11 +197,11 @@ class Season:
 
     def __radd__(self, n: int) -> "Season":
         """Addition with integer (adds years)."""
-        return Season(self._seas + n * 100, self.season_range)
+        return Season(self._seas + n * 100, self._season_range)
 
     def __add__(self, n: int) -> "Season":
         """Addition with integer (adds years)."""
-        return Season(self._seas + n * 100, self.season_range)
+        return Season(self._seas + n * 100, self._season_range)
 
     @overload
     def __sub__(self, other: int) -> "Season":
@@ -212,5 +214,5 @@ class Season:
     def __sub__(self, other: Union[int, "Season"]) -> Union["Season", int]:
         """Subtraction with integer|Season."""
         if isinstance(other, int):
-            return Season(self._seas - other * 100, self.season_range)
+            return Season(self._seas - other * 100, self._season_range)
         return self.start_date.year - other.start_date.year

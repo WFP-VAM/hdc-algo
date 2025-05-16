@@ -44,8 +44,8 @@ def test_season():
     assert season_cross_year2.season_index(30) == 1
     assert season_cross_year1.season_index(3) == 1
     assert season_cross_year2.season_index(3) == 1
-    assert season_cross_year1.season_index(22) is None
-    assert season_cross_year2.season_index(22) is None
+    assert season_cross_year1.season_index(22) == -1
+    assert season_cross_year2.season_index(22) == -1
     assert (season_cross_year1 + 1).id == 202501
     assert (season_cross_year2 + 1).id == 202501
     assert (season_cross_year1 - 1).id == 202301
