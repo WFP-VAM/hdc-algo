@@ -94,3 +94,8 @@ def test_season():
         datetime(2025, 6, 1) - timedelta(microseconds=1),
     )
     assert season_cross_year1.ndays == 243
+
+    # Test that cross-year seasons are sorted by start dekad
+    unsorted_cross_year = [(28, 10), (15, 20)]
+    season = Season(datetime(2022, 11, 10), unsorted_cross_year)
+    assert season.season_range == [(15, 20), (28, 10)]

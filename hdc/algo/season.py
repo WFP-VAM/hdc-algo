@@ -30,10 +30,30 @@ class Season:
         """
         Initialize the Season class with a date and season ranges.
 
+        Dekads are represented as integers from 1 to 36, where:
+            - Dekad 1 = Jan 1–10
+            - Dekad 2 = Jan 11–20
+            - ...
+            - Dekad 36 = Dec 21–31
+
+        Each season is a tuple of (start_dekad, end_dekad), e.g.:
+            (29, 6)  # means from dekad 29 (Oct 11–20) to dekad 6 (Feb 21–28)
+
         Args:
             date (Union[str, int, datetime, date, Dekad]): The date representing the season.
             season_range (List[Tuple[int, int]]): List of (start_dekad, end_dekad) tuples defining
-                seasons.
+                seasons: [(start1, end1), (start2, end2), ...].
+                The first tuple should refer to the main season, and the second (if any)
+                to the secondary season. The ranges will be automatically sorted to ensure this,
+                but user input should ideally follow this order.
+
+        Note:
+            - The dekad integers are 1-indexed and wrap around the calendar year.
+            - For seasons that span two years, we use a wrapping representation:
+                e.g., (29, 6) is interpreted as "start in year N at dekad 29, end in year N+1 at dekad 6".
+
+        Example:
+            season_range = [(7, 17), (29, 6)]  # main season: Mar–Jun, second season: Oct–Feb
         """
         self._season_range = season_range
         self.validate_season_ranges()
@@ -43,7 +63,9 @@ class Season:
         elif isinstance(date, int):
             self._seas = date
         else:
-            raise ValueError("Invalid date format. Must be a string, datetime, date, or Dekad.")
+            raise ValueError(
+                "Invalid date format. Must be a string, datetime, date, or Dekad."
+            )
 
     def __repr__(self):
         """Return string representation."""
@@ -87,13 +109,15 @@ class Season:
     def id(self) -> int:
         """Returns the unique integer representation of the season."""
         return self._seas
-    
+
     @property
     def season_range(self) -> List[Tuple[int, int]]:
         """Expose the season range as a read-only property."""
         return self._season_range
 
-    def season_index(self, date: Union[str, int, datetime.date, datetime.datetime, "Dekad"]) -> int:
+    def season_index(
+        self, date: Union[str, int, datetime.date, datetime.datetime, "Dekad"]
+    ) -> int:
         """
         Return the season index (e.g., 1, 2, etc.) for a given date.
 
@@ -115,7 +139,9 @@ class Season:
                     return i + 1
         return -1
 
-    def season_label(self, date: Union[str, int, datetime.date, datetime.datetime, "Dekad"]) -> int:
+    def season_label(
+        self, date: Union[str, int, datetime.date, datetime.datetime, "Dekad"]
+    ) -> int:
         """
         Return the season label (e.g., 202101, 202102) for the provided date.
 
@@ -142,22 +168,40 @@ class Season:
         return -1
 
     def validate_season_ranges(self):
-        """Ensure that the season ranges are valid and mutually exclusive."""
-        for i, (start, end) in enumerate(self._season_range):
-            if not (1 <= start <= 36 and 1 <= end <= 36):
+        """
+        Ensure that the season ranges are valid, sorted, and mutually exclusive.
+
+        - Dekads are integers in [1, 36], 1-indexed.
+        - Seasons may wrap into the next year, e.g. (29, 6) is valid (Oct–Feb).
+        - Ranges are sorted by start dekad (main season should come first).
+        - Ranges must not overlap.
+        """
+        # Check validity of dekads
+        for start, end in self._season_range:
+            if not (1 <= start <= 36) or not (1 <= end <= 36):
                 raise ValueError(
                     f"Invalid season range: ({start}, {end}). Dekads must be in [1, 36]."
                 )
 
-            # Check for overlaps with previous ranges
-            for j, (start2, other2) in enumerate(self._season_range):
-                if i != j:  # Avoid comparing the season with itself
-                    if (start <= other2 and end >= start2) or (
-                        start < start2 and end >= other2
-                    ):
-                        raise ValueError(
-                            f"Season range ({start}, {end}) overlaps with ({start2}, {other2})."
-                        )
+        # Sort season ranges by start dekad
+        self._season_range = sorted(self._season_range, key=lambda x: x[0])
+
+        # Convert ranges to sets and check for overlaps
+        dekad_sets = []
+        for start, end in self._season_range:
+            if start <= end:
+                dekads = set(range(start, end + 1))
+            else:
+                dekads = set(range(start, 37)) | set(range(1, end + 1))
+            dekad_sets.append(dekads)
+
+        for i, s1 in enumerate(dekad_sets):
+            for j in range(i + 1, len(dekad_sets)):
+                s2 = dekad_sets[j]
+                if s1 & s2:
+                    raise ValueError(
+                        f"Season range {self._season_range[i]} overlaps with {self._season_range[j]}."
+                    )
 
     @property
     def start_date(self) -> datetime.datetime:
@@ -189,7 +233,9 @@ class Season:
         """Number of days in season."""
         if isinstance(self.start_date, float):
             return -1
-        return (self.end_date - self.start_date + datetime.timedelta(microseconds=1)).days
+        return (
+            self.end_date - self.start_date + datetime.timedelta(microseconds=1)
+        ).days
 
     def __radd__(self, n: int) -> "Season":
         """Addition with integer (adds years)."""
