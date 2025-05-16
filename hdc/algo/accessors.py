@@ -157,21 +157,21 @@ class SeasonalAccessor(AccessorTimeBase):
         ).to_xarray()
 
     def idx(
-        self, season_range: Optional[List[Tuple[int, int]]] = None
+        self, season_range: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
         """Return the index of the season within the year."""
         return self._tseries.apply(
-            lambda x: Season(x, season_range).season_index(Dekad(x).yidx)
+            lambda x: Season(x, season_range).season_index(x)
         ).to_xarray()
 
     def ndays(
-        self, season_range: Optional[List[Tuple[int, int]]]
+        self, season_range: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
         """Return the number of days in each season."""
         return self._tseries.apply(lambda x: Season(x, season_range).ndays).to_xarray()
 
     def start_date(
-        self, season_range: Optional[List[Tuple[int, int]]]
+        self, season_range: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
         """Return the start date of each season."""
         return self._tseries.apply(
@@ -179,7 +179,7 @@ class SeasonalAccessor(AccessorTimeBase):
         ).to_xarray()
 
     def end_date(
-        self, season_range: Optional[List[Tuple[int, int]]]
+        self, season_range: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
         """Return the end date of each season."""
         return self._tseries.apply(
