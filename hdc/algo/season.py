@@ -1,7 +1,7 @@
 """Season helper class."""
 
 import datetime
-from typing import List, Optional, Tuple, Union, overload
+from typing import List, Tuple, Union, overload
 
 import numpy as np
 
@@ -38,17 +38,10 @@ class Season:
         self._season_range = season_range
         self.validate_season_ranges()
 
-        if isinstance(date, Dekad):
-            self._seas = self.season_label(date.start_date)
-        elif isinstance(date, str):
-            dekad_date = Dekad(date)
-            self._seas = self.season_label(dekad_date.start_date)
+        if isinstance(date, (str, datetime.date, datetime.datetime, Dekad)):
+            self._seas = self.season_label(date)
         elif isinstance(date, int):
             self._seas = date
-        elif isinstance(date, datetime.date):
-            self._seas = self.season_label(date)
-        elif isinstance(date, datetime.datetime):
-            self._seas = self.season_label(date)
         else:
             raise ValueError("Invalid date format. Must be a string, datetime, date, or Dekad.")
 
@@ -100,16 +93,19 @@ class Season:
         """Expose the season range as a read-only property."""
         return self._season_range
 
-    def season_index(self, dekad_of_year: int) -> int:
+    def season_index(self, date: Union[str, int, datetime.date, datetime.datetime, "Dekad"]) -> int:
         """
-        Return the season index (e.g., 1, 2, etc.) for the given dekad of the year.
+        Return the season index (e.g., 1, 2, etc.) for a given date.
 
         Args:
-            dekad_of_year (int): Dekad index (1-36).
+            date (Union[str, int, datetime, date, Dekad]): Input date.
 
         Returns:
             int: Season index or None if no match.
         """
+        # Convert date to dekad of the year
+        dekad_of_year = Dekad(date).yidx
+
         for i, (start, end) in enumerate(self._season_range):
             if start <= end:  # Normal case
                 if start <= dekad_of_year <= end:
@@ -119,20 +115,20 @@ class Season:
                     return i + 1
         return -1
 
-    def season_label(self, date: Union[datetime.date, datetime.datetime]) -> int:
+    def season_label(self, date: Union[str, int, datetime.date, datetime.datetime, "Dekad"]) -> int:
         """
         Return the season label (e.g., 202101, 202102) for the provided date.
 
         For cross-year seasons (e.g., Oct-May), the label uses the starting year.
 
         Args:
-            date (datetime or date): Input date.
+            date (Union[str, int, datetime, date, Dekad]): Input date.
 
         Returns:
             str: Season label (e.g., 202101) or an empty string if no match.
         """
         dekad = Dekad(date).yidx
-        season_idx = self.season_index(dekad)
+        season_idx = self.season_index(date)
 
         if season_idx != -1:
             # Determine correct reference year for cross-year seasons
