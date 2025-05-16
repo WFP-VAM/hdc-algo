@@ -97,7 +97,7 @@ class Season:
         """Returns the unique string representation of the season."""
         return self._seas
 
-    def season_index(self, dekad_of_year: int) -> Optional[int]:
+    def season_index(self, dekad_of_year: int) -> int:
         """
         Return the season index (e.g., 1, 2, etc.) for the given dekad of the year.
 
@@ -114,7 +114,7 @@ class Season:
             else:  # Cross-year case
                 if dekad_of_year >= start or dekad_of_year <= end:
                     return i + 1
-        return None
+        return -1
 
     def season_label(self, date: Union[datetime.date, datetime.datetime]) -> int:
         """
