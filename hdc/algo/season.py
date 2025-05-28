@@ -159,7 +159,7 @@ class Season:
         else:
             dekad = Dekad(date)
 
-        dekad_idx = date.yidx
+        dekad_idx = dekad.yidx
         season_idx = self.season_index(date)
 
         if season_idx != -1:
@@ -233,14 +233,14 @@ class Season:
         return Dekad(36 * year + end_dekad - 1).end_date
 
     @property
-    def date_range(self) -> Tuple[datetime.datetime, datetime.datetime]:
+    def date_range(self) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
         """Start and end dates as python ``datetime``."""
         return self.start_date, self.end_date
 
     @property
     def ndays(self) -> int:
         """Number of days in season."""
-        if isinstance(self.start_date, float):
+        if not self.start_date:
             return -1
         return (
             self.end_date - self.start_date + datetime.timedelta(microseconds=1)
@@ -262,8 +262,10 @@ class Season:
     def __sub__(self, other: "Season") -> int:
         """Subtraction with Season (returns difference in years)."""
 
-    def __sub__(self, other: Union[int, "Season"]) -> Union["Season", int]:
+    def __sub__(self, other: Union[int, "Season"]) -> Optional[Union["Season", int]]:
         """Subtraction with integer|Season."""
         if isinstance(other, int):
             return Season(self._seas - other * 100, self._season_range)
+        if not self.start_date or not other.start_date:
+            return None
         return self.start_date.year - other.start_date.year
