@@ -168,13 +168,18 @@ def gammastd(x, nodata, cal_start, cal_stop, a=0, b=0):
     """
     t = len(x)
 
+    n_zero = 0
     n_valid = 0
 
     for val in x:
-        if val > 0:
+        if val == nodata:
+            continue
+        if val == 0:
+            n_zero += 1
+        if val >= 0:
             n_valid += 1
 
-    p_zero = 1 - (n_valid / t)
+    p_zero = n_zero / n_valid
 
     if p_zero > 0.9:
         return np.full_like(x, nodata, dtype="float64")
@@ -187,16 +192,19 @@ def gammastd(x, nodata, cal_start, cal_stop, a=0, b=0):
     if alpha == 0 or beta == 0:
         return np.full_like(x, nodata, dtype="float64")
 
-    y = np.full(t, p_zero, dtype="float64")  # type: ignore
+    y = np.full(t, nodata, dtype="float64")  # type: ignore
 
     for ix in range(t):
-        if x[ix] > 0:
+        if x[ix] == nodata:
+            continue
+
+        if x[ix] >= 0:
             y[ix] = p_zero + (
                 (1 - p_zero)
                 * sc.gammainc(alpha, x[ix] / beta)  # pylint: disable=no-member
             )
+            y[ix] = sc.ndtri(y[ix])
 
-        y[ix] = sc.ndtri(y[ix])
     return y
 
 
@@ -231,7 +239,10 @@ def gammastd_yxt(
                 continue
             s = gammastd(xt, nodata, cal_start, cal_stop)
             if (s != nodata).sum() > 0:
-                s = s * 1000
+                for ti in range(t):
+                    if s[ti] == nodata:
+                        continue
+                    s[ti] = s[ti] * 1000
                 np.round(s, 0, s)
                 y[ri, ci, :] = s[:]
 
