@@ -5,7 +5,7 @@ on:
 
 jobs:
   pyenv:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       cache-key: ${{ steps.cfg.outputs.cache-key }}
       cache-path: ${{ steps.cfg.outputs.cache-path }}
