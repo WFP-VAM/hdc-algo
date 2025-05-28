@@ -149,9 +149,6 @@ class SeasonalAccessor(AccessorTimeBase):
         self, season_ranges: List[Tuple[int, int]]
     ) -> Union[xarray.DataArray, xarray.Dataset]:
         """Assign a seasonal label to each time step in the xarray object."""
-        if "time" not in self._obj.coords:
-            raise ValueError("The xarray object must have a 'time' coordinate.")
-
         return self._tseries.apply(
             lambda date: Season(date, season_ranges).id
         ).to_xarray()
