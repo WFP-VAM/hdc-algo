@@ -50,7 +50,7 @@ class Season:
         Note:
             - The dekad integers are 1-indexed and wrap around the calendar year.
             - For seasons that span two years, we use a wrapping representation:
-                e.g., (29, 6) is interpreted as 
+                e.g., (29, 6) is interpreted as
                 "start in year N at dekad 29, end in year N+1 at dekad 6".
 
         Example:
