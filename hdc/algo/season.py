@@ -50,7 +50,8 @@ class Season:
         Note:
             - The dekad integers are 1-indexed and wrap around the calendar year.
             - For seasons that span two years, we use a wrapping representation:
-                e.g., (29, 6) is interpreted as "start in year N at dekad 29, end in year N+1 at dekad 6".
+                e.g., (29, 6) is interpreted as 
+                "start in year N at dekad 29, end in year N+1 at dekad 6".
 
         Example:
             season_range = [(7, 17), (29, 6)]  # main season: Mar–Jun, second season: Oct–Feb
@@ -180,7 +181,7 @@ class Season:
         """
         # Check validity of dekads
         for start, end in season_range:
-            if not (1 <= start <= 36) or not (1 <= end <= 36):
+            if not 1 <= start <= 36 or not 1 <= end <= 36:
                 raise ValueError(
                     f"Invalid season range: ({start}, {end}). Dekads must be in [1, 36]."
                 )
