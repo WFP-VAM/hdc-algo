@@ -233,14 +233,17 @@ class Season:
         return Dekad(36 * year + end_dekad - 1).end_date
 
     @property
-    def date_range(self) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+    def date_range(
+        self,
+    ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
         """Start and end dates as python ``datetime``."""
         return self.start_date, self.end_date
 
     @property
     def ndays(self) -> int:
         """Number of days in season."""
-        if not self.start_date:
+        if not self.start_date or not self.end_date:
+            # If start or end date is None, return -1 to indicate invalid season
             return -1
         return (
             self.end_date - self.start_date + datetime.timedelta(microseconds=1)
