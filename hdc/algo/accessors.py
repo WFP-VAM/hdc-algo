@@ -45,17 +45,17 @@ class AccessorTimeBase(AccessorBase):
 
     def __init__(self, xarray_obj):
         """Construct with DataArray|Dataset."""
-        if not hasattr(xarray_obj, "time"):
-            raise ValueError("Data array is missing 'time' accessor!")
-
-        if "time" not in xarray_obj.dims:
-            xarray_obj = xarray_obj.expand_dims("time")
-
         if not np.issubdtype(xarray_obj.time, np.datetime64):
             raise TypeError(
                 "'This accessor is only available for "
                 "DataArray with datetime64 dtype"
             )
+        
+        if not hasattr(xarray_obj, "time"):
+            raise ValueError("Data array is missing 'time' accessor!")
+
+        if "time" not in xarray_obj.dims:
+            xarray_obj = xarray_obj.expand_dims("time")
         self._obj = xarray_obj
 
         super().__init__(xarray_obj)
