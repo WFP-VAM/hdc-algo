@@ -3,8 +3,6 @@
 import datetime
 from typing import List, Optional, Tuple, Union, overload
 
-import numpy as np
-
 from .dekad import Dekad
 
 
@@ -129,7 +127,7 @@ class Season:
             int: Season index or None if no match.
         """
         # Convert date to dekad of the year
-        if isinstance(date, (int, str, datetime.date, datetime.datetime)):
+        if not isinstance(date, Dekad):
             date = Dekad(date)
         dekad_of_year = date.yidx
 
@@ -156,10 +154,10 @@ class Season:
         Returns:
             str: Season label (e.g., 202101) or an empty string if no match.
         """
-        if isinstance(date, (int, str, datetime.date, datetime.datetime)):
-            dekad = Dekad(date)
-        else:
+        if isinstance(date, Dekad):
             dekad = date
+        else:
+            dekad = Dekad(date)
 
         dekad_idx = date.yidx
         season_idx = self.season_index(date)
