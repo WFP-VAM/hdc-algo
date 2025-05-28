@@ -12,3 +12,8 @@ def data_dir() -> Path:
 @pytest.fixture(scope="session")
 def ts_ndvi(data_dir):
     yield (-3000, np.loadtxt(data_dir / "ts-ndvi.txt", dtype="int16"))
+
+
+@pytest.fixture(scope="session")
+def season_ranges():
+    return [(1, 3), (4, 6)]
