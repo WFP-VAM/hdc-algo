@@ -1,7 +1,7 @@
 """Season helper class."""
 
 import datetime
-from typing import List, Tuple, Union, overload
+from typing import List, Optional, Tuple, Union, overload
 
 import numpy as np
 
@@ -129,7 +129,9 @@ class Season:
             int: Season index or None if no match.
         """
         # Convert date to dekad of the year
-        dekad_of_year = Dekad(date).yidx
+        if isinstance(date, (int, str, datetime.date, datetime.datetime)):
+            date = Dekad(date)
+        dekad_of_year = date.yidx
 
         for i, (start, end) in enumerate(self._season_range):
             if start <= end:  # Normal case
@@ -154,18 +156,23 @@ class Season:
         Returns:
             str: Season label (e.g., 202101) or an empty string if no match.
         """
-        dekad = Dekad(date).yidx
+        if isinstance(date, (int, str, datetime.date, datetime.datetime)):
+            dekad = Dekad(date)
+        else:
+            dekad = date
+
+        dekad_idx = date.yidx
         season_idx = self.season_index(date)
 
         if season_idx != -1:
             # Determine correct reference year for cross-year seasons
             for start, end in self._season_range:
                 if start <= end:  # Normal case
-                    if start <= dekad <= end:
-                        return int(f"{date.year}{season_idx:02d}")
-                if dekad >= start:  # Cross-year case
-                    return int(f"{date.year}{season_idx:02d}")
-                return int(f"{date.year - 1}{season_idx:02d}")
+                    if start <= dekad_idx <= end:
+                        return int(f"{dekad.year}{season_idx:02d}")
+                if dekad_idx >= start:  # Cross-year case
+                    return int(f"{dekad.year}{season_idx:02d}")
+                return int(f"{dekad.year - 1}{season_idx:02d}")
         return -1
 
     def validate_season_ranges(
@@ -208,20 +215,20 @@ class Season:
         return season_range
 
     @property
-    def start_date(self) -> datetime.datetime:
+    def start_date(self) -> Optional[datetime.datetime]:
         """Start date as python ``datetime``."""
         if self._seas == -1:
-            return np.nan
+            return None
         year = self._seas // 100
         season_idx = self._seas % 100
         start_dekad = self._season_range[season_idx - 1][0]
         return Dekad(36 * year + start_dekad - 1).start_date
 
     @property
-    def end_date(self) -> datetime.datetime:
+    def end_date(self) -> Optional[datetime.datetime]:
         """End date as python ``datetime``."""
         if self._seas == -1:
-            return np.nan
+            return None
         season_idx = self._seas % 100
         start_dekad, end_dekad = self._season_range[season_idx - 1]
         year = self._seas // 100 + int(end_dekad < start_dekad)
