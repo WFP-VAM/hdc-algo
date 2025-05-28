@@ -145,28 +145,28 @@ def test_period_exception(darr):
 
 
 def test_season_label(darr, season_ranges):
-    assert isinstance(darr.season.label(season_ranges), xr.DataArray)
+    assert isinstance(darr.time.season.label(season_ranges), xr.DataArray)
     np.testing.assert_array_equal(
-        darr.season.label(season_ranges), [200001, 200001, 200001, 200001, 200002]
+        darr.time.season.label(season_ranges), [200001, 200001, 200001, 200001, 200002]
     )
 
 
 def test_season_idx(darr, season_ranges):
     assert isinstance(darr.time.season.idx(season_ranges), xr.DataArray)
-    np.testing.assert_array_equal(darr.season.idx(season_ranges), [1, 1, 1, 1, 2])
+    np.testing.assert_array_equal(darr.time.season.idx(season_ranges), [1, 1, 1, 1, 2])
 
 
 def test_season_ndays(darr, season_ranges):
     assert isinstance(darr.time.season.ndays(season_ranges), xr.DataArray)
     np.testing.assert_equal(
-        darr.season.ndays(season_ranges).values, np.array([31, 31, 31, 31, 29])
+        darr.time.season.ndays(season_ranges).values, np.array([31, 31, 31, 31, 29])
     )
 
 
 def test_season_start_date(darr, season_ranges):
     assert isinstance(darr.time.season.start_date(season_ranges), xr.DataArray)
     np.testing.assert_equal(
-        darr.season.start_date(season_ranges).values,
+        darr.time.season.start_date(season_ranges).values,
         np.array(
             ["2000-01-01T00:00:00.000000000"] * 4 + ["2000-02-01T00:00:00.000000000"],
             dtype="datetime64[ns]",
@@ -177,7 +177,7 @@ def test_season_start_date(darr, season_ranges):
 def test_season_end_date(darr, season_ranges):
     assert isinstance(darr.time.season.end_date(season_ranges), xr.DataArray)
     np.testing.assert_equal(
-        darr.season.end_date(season_ranges).values,
+        darr.time.season.end_date(season_ranges).values,
         np.array(
             ["2000-01-31T23:59:59.999999000"] * 4 + ["2000-02-29T23:59:59.999999000"],
             dtype="datetime64[ns]",
@@ -186,7 +186,7 @@ def test_season_end_date(darr, season_ranges):
 
 
 def test_season_exception(darr, season_ranges):
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         _ = darr.x.season.label(season_ranges)
 
 
