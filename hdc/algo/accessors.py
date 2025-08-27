@@ -1,21 +1,23 @@
 """Xarray Accesor classes."""
 
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, Optional, Tuple, Union
 from warnings import warn
 
-from dask import is_dask_collection
 import dask.array as da
-from dask.base import tokenize
 import numpy as np
 import xarray
+from dask import is_dask_collection
+from dask.base import tokenize
 
 from . import ops
 from .dekad import Dekad
+from .season import Season
 from .utils import get_calibration_indices, to_linspace
 
 __all__ = [
     "Anomalies",
     "Dekad",
+    "Season",
     "IterativeAggregation",
     "PixelAlgorithms",
     "WhittakerSmoother",
@@ -132,6 +134,54 @@ class DekadPeriod(Period):
     """Accessor class for dekad period."""
 
     _period_cls = Dekad
+
+
+@xarray.register_dataset_accessor("season")
+@xarray.register_dataarray_accessor("season")
+class SeasonalAccessor(AccessorTimeBase):
+    """Accessor class for handling seasonal indexing of an xarray object."""
+
+    @property
+    def _tseries(self):
+        return self._obj.time.to_series()
+
+    def label(
+        self, season_ranges: List[Tuple[int, int]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Assign a seasonal label to each time step in the xarray object."""
+        return self._tseries.apply(
+            lambda date: Season(date, season_ranges).id
+        ).to_xarray()
+
+    def idx(
+        self, season_range: List[Tuple[int, int]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Return the index of the season within the year."""
+        return self._tseries.apply(
+            lambda x: Season(x, season_range).season_index(x)
+        ).to_xarray()
+
+    def ndays(
+        self, season_range: List[Tuple[int, int]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Return the number of days in each season."""
+        return self._tseries.apply(lambda x: Season(x, season_range).ndays).to_xarray()
+
+    def start_date(
+        self, season_range: List[Tuple[int, int]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Return the start date of each season."""
+        return self._tseries.apply(
+            lambda x: Season(x, season_range).start_date
+        ).to_xarray()
+
+    def end_date(
+        self, season_range: List[Tuple[int, int]]
+    ) -> Union[xarray.DataArray, xarray.Dataset]:
+        """Return the end date of each season."""
+        return self._tseries.apply(
+            lambda x: Season(x, season_range).end_date
+        ).to_xarray()
 
 
 class IterativeAggregation(AccessorBase):
@@ -489,10 +539,7 @@ class PixelAlgorithms(AccessorBase):
                 )
 
         # pylint: disable=import-outside-toplevel
-        from .ops.stats import (
-            gammastd_yxt,
-            gammastd_grp,
-        )
+        from .ops.stats import gammastd_grp, gammastd_yxt
 
         tix = self._obj.get_index("time")
 
@@ -649,10 +696,7 @@ class PixelAlgorithms(AccessorBase):
     def mktrend(self):
         """Calculate the Mann-Kendall trend along the time dimension."""
         # pylint: disable=import-outside-toplevel
-        from .ops.stats import (
-            _mann_kendall_trend_gu,
-            _mann_kendall_trend_gu_nd,
-        )
+        from .ops.stats import _mann_kendall_trend_gu, _mann_kendall_trend_gu_nd
 
         nodata = self._obj.attrs.get("nodata", None)
         if nodata is None:
