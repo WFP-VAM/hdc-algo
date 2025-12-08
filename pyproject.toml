@@ -64,7 +64,7 @@ dev = [
 exclude = [
     "hdc/algo/vendor",
 ]
-line-length = 88
+line-length = 105
 target-version = "py310"
 
 [tool.ruff.lint]
@@ -90,10 +90,29 @@ ignore = [
 "tests/**/*.py" = [
     "D",      # Don't require docstrings in tests
     "PLR2004", # Magic value used in comparison
+    "E741",   # Ambiguous variable name (e.g., `l` for lambda)
+    "N803",   # Argument name should be lowercase
+    "N806",   # Variable in function should be lowercase
+    "PLR0912",  # Too many branches
+    "PLR0913",  # Too many arguments
+    "PLR0915",  # Too many statements
 ]
+"hdc/algo/ops/**/*.py" = [
+    "PLR0912",  # Too many branches (numba-optimized code)
+    "PLR0913",  # Too many arguments (numba-optimized code)
+    "PLR0915",  # Too many statements (numba-optimized code)
+]
+"hdc/algo/ops/autocorr.py" = ["N806"]  # Allow uppercase for mathematical notation (N, Sx, Sy, etc.)
+"hdc/algo/ops/ws2dwcv.py" = ["N806"]  # Allow uppercase for mathematical notation (tr_H)
+"hdc/algo/ops/ws2dwcvp.py" = ["N806"]  # Allow uppercase for mathematical notation (tr_H)
+"hdc/algo/ops/whit.py" = ["N806"]  # Allow uppercase for mathematical notation (M)
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"  # or "google" or "pep257" - adjust based on your preference
+
+[tool.ruff.lint.pylint]
+max-args = 10  # Maximum number of arguments in function definition
+max-statements = 8  # Maximum number of statements in function
 
 [tool.mypy]
 exclude = [

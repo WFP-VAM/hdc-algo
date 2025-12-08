@@ -31,9 +31,7 @@ def ws2dpgu(y, lmda, nodata, p, out):
         m = y.shape[0]
 
         # Compute weights for nodata values
-        w = 1 - np.array(
-            [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
-        )
+        w = 1 - np.array([((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64)
         n = np.sum(w)
 
         if n > 1:

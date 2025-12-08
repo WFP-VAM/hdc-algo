@@ -21,8 +21,7 @@ def lroo(data, out):
         d = dots[ix] - dots[ix - 1]
         if d == 1:
             cr += 1
-            if cr > mr:
-                mr = cr
+            mr = max(mr, cr)
         else:
             cr = 1
 

@@ -1,7 +1,5 @@
 from datetime import date, datetime, timedelta
 
-import pytest
-
 from hdc.algo.dekad import Dekad
 
 # pylint: disable=use-implicit-booleaness-not-comparison

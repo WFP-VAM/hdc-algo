@@ -49,9 +49,7 @@ def res_spi():
 
 @pytest.fixture
 def zones():
-    x = xr.DataArray(
-        [[0, 1], [0, 1]], dims=("y", "x"), name="band", attrs={"nodata": -1}
-    )
+    x = xr.DataArray([[0, 1], [0, 1]], dims=("y", "x"), name="band", attrs={"nodata": -1})
 
     return x
 
@@ -81,9 +79,7 @@ def test_period_yidx_linspace_dekad(darr):
 
 def test_period_ndays_dekad(darr):
     assert isinstance(darr.time.dekad.ndays, xr.DataArray)
-    np.testing.assert_equal(
-        darr.time.dekad.ndays.values, np.array([10, 10, 11, 11, 10])
-    )
+    np.testing.assert_equal(darr.time.dekad.ndays.values, np.array([10, 10, 11, 11, 10]))
 
 
 def test_period_start_date_dekad(darr):
@@ -122,9 +118,7 @@ def test_period_end_date_dekad(darr):
 
 def test_period_raw_dekad(darr):
     assert isinstance(darr.time.dekad.raw, xr.DataArray)
-    np.testing.assert_array_equal(
-        darr.time.dekad.raw, [72000, 72001, 72002, 72002, 72003]
-    )
+    np.testing.assert_array_equal(darr.time.dekad.raw, [72000, 72001, 72002, 72002, 72003])
 
 
 def test_period_labels_dekad(darr):
@@ -158,9 +152,7 @@ def test_season_idx(darr, season_ranges):
 
 def test_season_ndays(darr, season_ranges):
     assert isinstance(darr.time.season.ndays(season_ranges), xr.DataArray)
-    np.testing.assert_equal(
-        darr.time.season.ndays(season_ranges).values, np.array([31, 31, 31, 31, 29])
-    )
+    np.testing.assert_equal(darr.time.season.ndays(season_ranges).values, np.array([31, 31, 31, 31, 29]))
 
 
 def test_season_start_date(darr, season_ranges):
@@ -209,23 +201,17 @@ def test_algo_croo(darr):
 def test_anom_ratio(darr):
     _res = np.array([[85.0, 443.0], [18.0, 83.0]])
 
-    np.testing.assert_array_equal(
-        darr.isel(time=0).hdc.anom.ratio(darr.isel(time=1)).round(), _res
-    )
+    np.testing.assert_array_equal(darr.isel(time=0).hdc.anom.ratio(darr.isel(time=1)).round(), _res)
 
 
 def test_anom_diff(darr):
     _res = np.array([[-9, 72], [-68, -15]])
 
-    np.testing.assert_array_equal(
-        darr.isel(time=0).hdc.anom.diff(darr.isel(time=1)), _res
-    )
+    np.testing.assert_array_equal(darr.isel(time=0).hdc.anom.diff(darr.isel(time=1)), _res)
 
 
 def test_algo_autocorr(darr):
-    _res = np.array(
-        [[-0.7395127, -0.69477093], [-0.1768683, 0.6412078]], dtype="float32"
-    )
+    _res = np.array([[-0.7395127, -0.69477093], [-0.1768683, 0.6412078]], dtype="float32")
     darr_autocorr = darr.hdc.algo.autocorr()
     assert isinstance(darr_autocorr, xr.DataArray)
     np.testing.assert_almost_equal(darr_autocorr, _res)
@@ -281,9 +267,7 @@ def test_algo_spi_attrs_stop(darr):
 
 
 def test_algo_spi_decoupled_1(darr, res_spi):
-    _res = darr.hdc.algo.spi(
-        calibration_begin="2000-01-01", calibration_end="2000-02-10"
-    )
+    _res = darr.hdc.algo.spi(calibration_begin="2000-01-01", calibration_end="2000-02-10")
 
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
@@ -300,9 +284,7 @@ def test_algo_spi_decoupled_2(darr):
         ]
     )
 
-    _res = darr.hdc.algo.spi(
-        calibration_begin="2000-01-01", calibration_end="2000-01-31"
-    )
+    _res = darr.hdc.algo.spi(calibration_begin="2000-01-01", calibration_end="2000-01-31")
 
     assert isinstance(_res, xr.DataArray)
     np.testing.assert_array_equal(_res, res_spi)
@@ -445,9 +427,7 @@ def test_agg_sum_3(darr):
     for _x in darr.hdc.iteragg.sum(n=3):
         np.testing.assert_array_equal(
             _x.squeeze(),
-            darr.sel(time=slice(_x.attrs["agg_start"], _x.attrs["agg_stop"])).sum(
-                "time"
-            ),
+            darr.sel(time=slice(_x.attrs["agg_start"], _x.attrs["agg_stop"])).sum("time"),
         )
         assert _x.attrs["agg_n"] == 3
         assert str(_x.time.to_index()[0]) == _x.attrs["agg_stop"]
@@ -520,9 +500,7 @@ def test_agg_mean_3(darr):
     for _x in darr.hdc.iteragg.mean(3):
         np.testing.assert_array_equal(
             _x.squeeze(),
-            darr.sel(time=slice(_x.attrs["agg_start"], _x.attrs["agg_stop"])).mean(
-                "time"
-            ),
+            darr.sel(time=slice(_x.attrs["agg_start"], _x.attrs["agg_stop"])).mean("time"),
         )
         assert _x.attrs["agg_n"] == 3
         assert str(_x.time.to_index()[0]) == _x.attrs["agg_stop"]
@@ -1139,9 +1117,7 @@ def test_rolling_sum_nodata(darr):
 def test_mean_grp(darr):
     grps = np.array([0, 0, 1, 1, 2], dtype="int16")
     tst = darr.hdc.algo.mean_grp(grps)[..., [0, 2, 4]]
-    cntrl = (
-        darr.groupby(xr.DataArray(grps, dims=("time",))).mean().transpose(..., "group")
-    )
+    cntrl = darr.groupby(xr.DataArray(grps, dims=("time",))).mean().transpose(..., "group")
 
     np.testing.assert_allclose(tst.data, cntrl.data)
 

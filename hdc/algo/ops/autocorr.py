@@ -84,7 +84,7 @@ def autocorr_1d_float(data):
     var_X = var_X * nx / N
     var_Y = var_Y * ny / N
 
-    if var_X < 1e-8 or var_Y < 1e-8:
+    if var_X < 1e-8 or var_Y < 1e-8:  # noqa: PLR2004
         return result
 
     result = A * (var_X**-0.5) * (var_Y**-0.5)
@@ -145,7 +145,7 @@ def autocorr_1d_int(data, nodata):
             Syy += y * y
             ny += 1
 
-        if x != nodata and y != nodata:  # pylint: disable=consider-using-in
+        if x != nodata and y != nodata:  # noqa: PLR1714
             Sx_ += x
             Sy_ += y
             Sxy += x * y
@@ -166,7 +166,7 @@ def autocorr_1d_int(data, nodata):
     var_X = var_X * nx / N
     var_Y = var_Y * ny / N
 
-    if var_X < 1e-8 or var_Y < 1e-8:
+    if var_X < 1e-8 or var_Y < 1e-8:  # noqa: PLR2004
         return result
 
     result = A * (var_X**-0.5) * (var_Y**-0.5)
@@ -191,7 +191,9 @@ def autocorr(x, nodata=None):
 
     Args:
         x: 3d data array (Y,X,T)
-    Returns:
+
+    Returns
+    -------
         Lag-1 autocorrelation array (Y,X)
     """
     r, c, _ = x.shape

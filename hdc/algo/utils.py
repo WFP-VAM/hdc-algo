@@ -1,15 +1,15 @@
 """hcd-algo utility functions."""
 
-from typing import Iterable, List, Optional, Tuple, Union
+from collections.abc import Iterable
 
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
+from numpy.typing import NDArray
 
-DateType = Union[str, pd.Timestamp, np.datetime64]
+DateType = str | pd.Timestamp | np.datetime64
 
 
-def to_linspace(x) -> Tuple[NDArray[(np.int16,)], List[int]]:
+def to_linspace(x) -> tuple[NDArray[(np.int16,)], list[int]]:
     """Map input array to linear space.
 
     Returns array with linear index (0 - n-1) and list of
@@ -29,10 +29,10 @@ def to_linspace(x) -> Tuple[NDArray[(np.int16,)], List[int]]:
 
 def get_calibration_indices(
     time: pd.DatetimeIndex,
-    calibration_range: Tuple[DateType, DateType],
-    groups: Optional[Iterable[Union[int, float, str]]] = None,
-    num_groups: Optional[int] = None,
-) -> Union[Tuple[int, int], np.ndarray]:
+    calibration_range: tuple[DateType, DateType],
+    groups: Iterable[int | float | str] | None = None,
+    num_groups: int | None = None,
+) -> tuple[int, int] | np.ndarray:
     """
     Get the calibration indices for a given time range.
 
@@ -42,7 +42,8 @@ def get_calibration_indices(
     array of shape (num_groups, 2) where the first column is the start index and
     the second column is the stop index.
 
-    Parameters:
+    Parameters
+    ----------
         time: The time index.
         start: The start time of the calibration range.
         stop: The stop time of the calibration range.
