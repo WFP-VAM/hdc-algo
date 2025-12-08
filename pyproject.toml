@@ -1,63 +1,108 @@
+[project]
+name = "hdc-algo"
+requires-python = ">=3.10"
+dynamic = ["version"]
+description = "Algorithmic components for the Humanitarian Data Cube"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Development Status :: 2 - Pre-Alpha",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Natural Language :: English",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+
+dependencies = [
+    "dask[array]>=2024.10.0",
+    "numba",
+    "numpy>=2",
+    "xarray",
+]
+
+[project.urls]
+Issues = "https://github.com/WFP-VAM/hdc-algo/issues/"
+
+[project.entry-points."numba_extensions"]
+init = "hdc.algo.vendor.numba_scipy:_init_extension"
+
 [build-system]
-requires = ["setuptools>=51.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "hdc/algo/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hdc"]
+
+[project.optional-dependencies]
+stats = [
+    "scipy",
+]
+build = [
+    "packaging>=25.0",
+    "twine>=6.2.0",
+    "wheel>=0.45.1",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.0",
+    "pytest>=9.0.2",
+    "ruff>=0.14.8",
+]
+
+[tool.ruff]
+exclude = [
+    "hdc/algo/vendor",
+]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "D",      # pydocstyle
+    "UP",     # pyupgrade
+    "PL",     # pylint
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D104",   # Missing docstring in public package
+    "D203",   # 1 blank line required before class docstring (conflicts with D211)
+    "D213",   # Multi-line docstring summary should start at the second line (conflicts with D212)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "D",      # Don't require docstrings in tests
+    "PLR2004", # Magic value used in comparison
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"  # or "google" or "pep257" - adjust based on your preference
 
 [tool.mypy]
-python_version = "3.10"
-ignore_missing_imports = true
-allow_redefinition = true
-
-[tool.coverage.run]
-omit = [
-  "tests/*"
+exclude = [
+    "hdc/algo/vendor",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ['py38']
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | build
-  | dist
-  | hdc/algo/vendor
-)/
-'''
-
-[tool.isort]
-profile = "black"
-
-[tool.pylint.main]
-ignore-paths = [
-   "hdc/algo/vendor/*"
-]
-extension-pkg-allow-list = [
-  "scipy.special"
-]
-
-[tool.pylint.messages_control]
-max-line-length = 99
-
-disable = [
-  "too-many-locals",
-  "too-many-branches",
-  "too-many-statements",
-  "too-few-public-methods",
-  "too-many-arguments",
-  "missing-module-docstring",
-  "missing-function-docstring",
-  "invalid-name",
-  "duplicate-code",
-  "fixme",
-  "wrong-import-order",
-  "unnecessary-lambda-assignment",
-]
-
-[tool.pydocstyle]
-match-dir = "(?!vendor).*"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
