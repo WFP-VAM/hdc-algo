@@ -1,5 +1,0 @@
-scipy
-numba
-numpy
-xarray
-dask[array]
