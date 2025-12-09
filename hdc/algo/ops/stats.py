@@ -2,10 +2,9 @@
 
 from math import erf, log, sqrt
 
-
-from numba import guvectorize, njit
 import numpy as np
 import scipy.special as sc
+from numba import guvectorize, njit
 
 from ..vendor.numba_scipy import _init_extension
 from ._helper import lazycompile
@@ -34,7 +33,7 @@ def brentq(xa, xb, s):
     xtol = 2e-12
     rtol = 8.881784197001252e-16
 
-    func = lambda a: log(a) - sc.digamma(a) - s
+    func = lambda a: log(a) - sc.digamma(a) - s  # noqa: E731
 
     fpre = func(xpre)
     fcur = func(xcur)
@@ -79,9 +78,7 @@ def brentq(xa, xb, s):
                 # extrapolate
                 dpre = (fpre - fcur) / (xpre - xcur)
                 dblk = (fblk - fcur) / (xblk - xcur)
-                stry = (
-                    -fcur * (fblk * dblk - fpre * dpre) / (dblk * dpre * (fblk - fpre))
-                )
+                stry = -fcur * (fblk * dblk - fpre * dpre) / (dblk * dpre * (fblk - fpre))
 
             if (2 * abs(stry)) < min(abs(spre), 3 * abs(sbis) - delta):
                 # good short step
@@ -181,7 +178,7 @@ def gammastd(x, nodata, cal_start, cal_stop, a=0, b=0):
 
     p_zero = n_zero / n_valid
 
-    if p_zero > 0.9:
+    if p_zero > 0.9:  # noqa: PLR2004
         return np.full_like(x, nodata, dtype="float64")
 
     if (a == 0) and (b == 0):
@@ -200,8 +197,7 @@ def gammastd(x, nodata, cal_start, cal_stop, a=0, b=0):
 
         if x[ix] >= 0:
             y[ix] = p_zero + (
-                (1 - p_zero)
-                * sc.gammainc(alpha, x[ix] / beta)  # pylint: disable=no-member
+                (1 - p_zero) * sc.gammainc(alpha, x[ix] / beta)  # pylint: disable=no-member
             )
             y[ix] = sc.ndtri(y[ix])
 

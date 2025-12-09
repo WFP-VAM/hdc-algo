@@ -14,23 +14,23 @@ from hdc.algo.ops import (
     ws2doptv,
     ws2doptvp,
     ws2doptvplc,
+    ws2dpgu,
     ws2dwcv,
     ws2dwcvp,
-    ws2dpgu,
 )
 from hdc.algo.ops.stats import (
     brentq,
     gammafit,
     gammastd,
-    gammastd_yxt,
     gammastd_grp,
-    mean_grp,
-    mk_score,
-    mk_p_value,
-    mk_z_score,
-    mk_variance_s,
-    mk_sens_slope,
+    gammastd_yxt,
     mann_kendall_trend_1d,
+    mean_grp,
+    mk_p_value,
+    mk_score,
+    mk_sens_slope,
+    mk_variance_s,
+    mk_z_score,
     rolling_sum,
 )
 
@@ -85,9 +85,7 @@ def test_autocorr_nodata(ts_ndvi):
 
 
 def test_brentq():
-    x = brentq.py_func(
-        xa=0.6446262296476516, xb=1.5041278691778537, s=0.5278852360624721
-    )
+    x = brentq.py_func(xa=0.6446262296476516, xb=1.5041278691778537, s=0.5278852360624721)
     assert x == pytest.approx(1.083449238500003)
 
 
@@ -182,9 +180,7 @@ def test_gammastd_selfit_2(ts):
     cal_stop = 8
     nodata = -9999
     a, b = gammafit.py_func(ts[cal_start:cal_stop])
-    xspi_ref = gammastd.py_func(
-        ts, nodata, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b
-    )
+    xspi_ref = gammastd.py_func(ts, nodata, cal_start=cal_start, cal_stop=cal_stop, a=a, b=b)
     xspi = gammastd.py_func(ts, nodata, cal_start=cal_start, cal_stop=cal_stop)
     np.testing.assert_equal(xspi, xspi_ref)
 
@@ -222,9 +218,7 @@ def test_rolling_sum():
     res = rolling_sum(np.arange(10).astype("float32"), 3, 0)
     np.testing.assert_almost_equal(
         res,
-        np.array(
-            [0.0, 0.0, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0], dtype="float32"
-        ),
+        np.array([0.0, 0.0, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0], dtype="float32"),
     )
 
 
@@ -308,9 +302,7 @@ def test_mk_p_value(ts):
 
 
 def test_mk_sens_slope(ts):
-    assert mk_sens_slope.py_func(ts) == pytest.approx(
-        (-0.054893050926832804, 1.1630310828723567)
-    )
+    assert mk_sens_slope.py_func(ts) == pytest.approx((-0.054893050926832804, 1.1630310828723567))
 
 
 def test_mann_kendall_trend_1d(ts):

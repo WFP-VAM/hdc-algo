@@ -1,6 +1,6 @@
 """Xarray Accesor classes."""
 
-from typing import Iterable, List, Optional, Tuple, Union
+from collections.abc import Iterable
 from warnings import warn
 
 import dask.array as da
@@ -17,9 +17,9 @@ from .utils import get_calibration_indices, to_linspace
 __all__ = [
     "Anomalies",
     "Dekad",
-    "Season",
     "IterativeAggregation",
     "PixelAlgorithms",
+    "Season",
     "WhittakerSmoother",
 ]
 
@@ -43,13 +43,10 @@ class AccessorBase:
 class AccessorTimeBase(AccessorBase):
     """Base class for accessors with required time dimension."""
 
-    def __init__(self, xarray_obj):
+    def __init__(self, xarray_obj):  # noqa: PLR0915
         """Construct with DataArray|Dataset."""
         if not np.issubdtype(xarray_obj, np.datetime64):
-            raise TypeError(
-                "'This accessor is only available for "
-                "DataArray with datetime64 dtype"
-            )
+            raise TypeError("'This accessor is only available for DataArray with datetime64 dtype")
 
         if not hasattr(xarray_obj, "time"):
             raise ValueError("Data array is missing 'time' accessor!")
@@ -145,43 +142,25 @@ class SeasonalAccessor(AccessorTimeBase):
     def _tseries(self):
         return self._obj.time.to_series()
 
-    def label(
-        self, season_ranges: List[Tuple[int, int]]
-    ) -> Union[xarray.DataArray, xarray.Dataset]:
+    def label(self, season_ranges: list[tuple[int, int]]) -> xarray.DataArray | xarray.Dataset:
         """Assign a seasonal label to each time step in the xarray object."""
-        return self._tseries.apply(
-            lambda date: Season(date, season_ranges).id
-        ).to_xarray()
+        return self._tseries.apply(lambda date: Season(date, season_ranges).id).to_xarray()
 
-    def idx(
-        self, season_range: List[Tuple[int, int]]
-    ) -> Union[xarray.DataArray, xarray.Dataset]:
+    def idx(self, season_range: list[tuple[int, int]]) -> xarray.DataArray | xarray.Dataset:
         """Return the index of the season within the year."""
-        return self._tseries.apply(
-            lambda x: Season(x, season_range).season_index(x)
-        ).to_xarray()
+        return self._tseries.apply(lambda x: Season(x, season_range).season_index(x)).to_xarray()
 
-    def ndays(
-        self, season_range: List[Tuple[int, int]]
-    ) -> Union[xarray.DataArray, xarray.Dataset]:
+    def ndays(self, season_range: list[tuple[int, int]]) -> xarray.DataArray | xarray.Dataset:
         """Return the number of days in each season."""
         return self._tseries.apply(lambda x: Season(x, season_range).ndays).to_xarray()
 
-    def start_date(
-        self, season_range: List[Tuple[int, int]]
-    ) -> Union[xarray.DataArray, xarray.Dataset]:
+    def start_date(self, season_range: list[tuple[int, int]]) -> xarray.DataArray | xarray.Dataset:
         """Return the start date of each season."""
-        return self._tseries.apply(
-            lambda x: Season(x, season_range).start_date
-        ).to_xarray()
+        return self._tseries.apply(lambda x: Season(x, season_range).start_date).to_xarray()
 
-    def end_date(
-        self, season_range: List[Tuple[int, int]]
-    ) -> Union[xarray.DataArray, xarray.Dataset]:
+    def end_date(self, season_range: list[tuple[int, int]]) -> xarray.DataArray | xarray.Dataset:
         """Return the end date of each season."""
-        return self._tseries.apply(
-            lambda x: Season(x, season_range).end_date
-        ).to_xarray()
+        return self._tseries.apply(lambda x: Season(x, season_range).end_date).to_xarray()
 
 
 class IterativeAggregation(AccessorBase):
@@ -189,38 +168,38 @@ class IterativeAggregation(AccessorBase):
 
     def sum(
         self,
-        n: Optional[int] = None,
+        n: int | None = None,
         dim: str = "time",
-        begin: Optional[Union[str, int, float]] = None,
-        end: Optional[Union[str, int, float]] = None,
-        method: Optional[str] = None,
+        begin: str | int | float | None = None,
+        end: str | int | float | None = None,
+        method: str | None = None,
     ):
         """Generate sum-aggregations over dim for periods n."""
         yield from self._iteragg(np.nansum, n, dim, begin, end, method)
 
     def mean(
         self,
-        n: Optional[int] = None,
+        n: int | None = None,
         dim: str = "time",
-        begin: Optional[Union[str, int, float]] = None,
-        end: Optional[Union[str, int, float]] = None,
-        method: Optional[str] = None,
+        begin: str | int | float | None = None,
+        end: str | int | float | None = None,
+        method: str | None = None,
     ):
         """Generate mean-aggregations over dim for slices of n."""
         yield from self._iteragg(np.nanmean, n, dim, begin, end, method)
 
     def full(
         self,
-        n: Optional[int] = None,
+        n: int | None = None,
         dim: str = "time",
-        begin: Optional[Union[str, int, float]] = None,
-        end: Optional[Union[str, int, float]] = None,
-        method: Optional[str] = None,
+        begin: str | int | float | None = None,
+        end: str | int | float | None = None,
+        method: str | None = None,
     ):
         """Generate mean-aggregations over dim for slices of n."""
         yield from self._iteragg(None, n, dim, begin, end, method)
 
-    def _iteragg(self, func, n, dim, begin, end, method):
+    def _iteragg(self, func, n, dim, begin, end, method):  # noqa: PLR0912,PLR0915
         if dim not in self._obj.dims:
             raise ValueError(f"Dimension {dim} doesn't exist in xarray object!")
 
@@ -234,9 +213,7 @@ class IterativeAggregation(AccessorBase):
             try:
                 (begin_ix,) = _index.get_indexer([begin], method=method) + 1
             except KeyError:
-                raise ValueError(
-                    f"Value {begin} for 'begin' not found in index for dim {dim}"
-                ) from None
+                raise ValueError(f"Value {begin} for 'begin' not found in index for dim {dim}") from None
         else:
             begin_ix = self._obj.sizes[dim]
 
@@ -244,9 +221,7 @@ class IterativeAggregation(AccessorBase):
             try:
                 (end_ix,) = _index.get_indexer([end], method=method)
             except KeyError:
-                raise ValueError(
-                    f"Value {end} for 'end' not found in index for dim {dim}"
-                ) from None
+                raise ValueError(f"Value {end} for 'end' not found in index for dim {dim}") from None
         else:
             end_ix = 0
 
@@ -287,12 +262,12 @@ class Anomalies(AccessorBase):
 class WhittakerSmoother(AccessorBase):
     """Class for applying different version of the Whittaker smoother."""
 
-    def whits(
+    def whits(  # noqa: PLR0915
         self,
-        nodata: Union[int, float],
-        sg: Optional[xarray.DataArray] = None,
-        s: Optional[float] = None,
-        p: Optional[float] = None,
+        nodata: int | float,
+        sg: xarray.DataArray | None = None,
+        s: float | None = None,
+        p: float | None = None,
     ) -> xarray.Dataset:
         """
         Apply whittaker with fixed S.
@@ -306,7 +281,8 @@ class WhittakerSmoother(AccessorBase):
             s: S value
             p: Envelope value for asymmetric weights
 
-        Returns:
+        Returns
+        -------
             ds_out: xarray.Dataset with smoothed data
         """
         if not self._check_for_timedim():
@@ -343,12 +319,12 @@ class WhittakerSmoother(AccessorBase):
 
         return xout
 
-    def whitsvc(
+    def whitsvc(  # noqa: PLR0915
         self,
-        nodata: Union[int, float],
-        lc: Optional[xarray.DataArray] = None,
-        srange: Optional[np.ndarray] = None,
-        p: Optional[float] = None,
+        nodata: int | float,
+        lc: xarray.DataArray | None = None,
+        srange: np.ndarray | None = None,
+        p: float | None = None,
     ) -> xarray.Dataset:
         """
         Apply whittaker with V-curve optimization of S.
@@ -356,10 +332,12 @@ class WhittakerSmoother(AccessorBase):
         Args:
             nodata: nodata value
             lc: lag1 autocorrelation DataArray,
-            srange: values of S for V-curve optimization (mandatory if no autocorrelation raster)
+            srange: values of S for V-curve optimization
+                (mandatory if no autocorrelation raster)
             p: Envelope value for asymmetric weights
 
-        Returns:
+        Returns
+        -------
             ds_out: xarray.Dataset with smoothed data and sgrid
         """
         if not self._check_for_timedim():
@@ -367,9 +345,7 @@ class WhittakerSmoother(AccessorBase):
 
         if lc is not None:
             if p is None:
-                raise ValueError(
-                    "If lc is set, a p value needs to be specified as well."
-                )
+                raise ValueError("If lc is set, a p value needs to be specified as well.")
 
             ds_out, sgrid = xarray.apply_ufunc(
                 ops.ws2doptvplc,
@@ -417,11 +393,11 @@ class WhittakerSmoother(AccessorBase):
 
         return ds_out
 
-    def whitswcv(
+    def whitswcv(  # noqa: PLR0915
         self,
-        nodata: Union[int, float],
-        srange: Optional[np.ndarray] = None,
-        p: Optional[float] = None,
+        nodata: int | float,
+        srange: np.ndarray | None = None,
+        p: float | None = None,
         robust: bool = True,
     ) -> xarray.Dataset:
         """
@@ -431,9 +407,11 @@ class WhittakerSmoother(AccessorBase):
             nodata: nodata value
             srange: values of S for GCV optimization
             p: Envelope value for asymmetric weights
-            robust (boolean): performs a robust fitting by computing robust weights if True
+            robust (boolean): performs a robust fitting by computing
+                robust weights if True
 
-        Returns:
+        Returns
+        -------
             ds_out: xarray.Dataset with smoothed data and sgrid
         """
         if not self._check_for_timedim():
@@ -480,14 +458,10 @@ class WhittakerSmoother(AccessorBase):
     def whitint(self, labels_daily: np.ndarray, template: np.ndarray):
         """Compute temporal interpolation using the Whittaker filter."""
         if not self._check_for_timedim():
-            raise MissingTimeError(
-                "Whittaker temporal interpolation requires a time dimension!"
-            )
+            raise MissingTimeError("Whittaker temporal interpolation requires a time dimension!")
 
         if self._obj.dtype != "int16":
-            raise NotImplementedError(
-                "Temporal interpolation works currently only with int16 input!"
-            )
+            raise NotImplementedError("Temporal interpolation works currently only with int16 input!")
 
         template_out = np.zeros(np.unique(labels_daily).size, dtype="u1")
 
@@ -511,12 +485,12 @@ class WhittakerSmoother(AccessorBase):
 class PixelAlgorithms(AccessorBase):
     """Set of algorithms to be applied to pixel timeseries."""
 
-    def spi(
+    def spi(  # noqa: PLR0912,PLR0915
         self,
-        calibration_begin: Optional[str] = None,
-        calibration_end: Optional[str] = None,
-        nodata: Optional[Union[float, int]] = None,
-        groups: Optional[Iterable[Union[int, float, str]]] = None,
+        calibration_begin: str | None = None,
+        calibration_end: str | None = None,
+        nodata: float | int | None = None,
+        groups: Iterable[int | float | str] | None = None,
         dtype="int16",
     ):
         """Calculate the SPI along the time dimension.
@@ -526,20 +500,20 @@ class PixelAlgorithms(AccessorBase):
         determine the part of the timeseries used to fit the gamma distribution.
 
         `groups` can be supplied as list of group labels.
-        If `groups` is supplied, the SPI will be computed for each individual group.
-        This is intended to be used when SPI should be calculated for specific timesteps.
+        If `groups` is supplied, the SPI will be computed for each
+        individual group.
+        This is intended to be used when SPI should be calculated for
+        specific timesteps.
         """
         if not self._check_for_timedim():
             raise MissingTimeError("SPI requires a time dimension!")
 
         if nodata is None:
             if (nodata := self._obj.attrs.get("nodata")) is None:
-                raise ValueError(
-                    "Need nodata attribute defined, or nodata argument provided."
-                )
+                raise ValueError("Need nodata attribute defined, or nodata argument provided.")
 
         # pylint: disable=import-outside-toplevel
-        from .ops.stats import gammastd_grp, gammastd_yxt
+        from .ops.stats import gammastd_grp, gammastd_yxt  # noqa: PLC0415
 
         tix = self._obj.get_index("time")
 
@@ -556,9 +530,7 @@ class PixelAlgorithms(AccessorBase):
             raise ValueError("Calibration end cannot be smaller than first timestamp!")
 
         if groups is None:
-            calstart_ix, calstop_ix = get_calibration_indices(
-                tix, (calibration_begin, calibration_end)
-            )
+            calstart_ix, calstop_ix = get_calibration_indices(tix, (calibration_begin, calibration_end))
 
             if calstart_ix >= calstop_ix:
                 raise ValueError("calibration_begin < calibration_end!")
@@ -584,7 +556,6 @@ class PixelAlgorithms(AccessorBase):
             )
 
         else:
-
             groups, keys = to_linspace(np.array(groups, dtype="str"))
 
             if len(groups) != len(self._obj.time):
@@ -656,11 +627,12 @@ class PixelAlgorithms(AccessorBase):
             keep_attrs=True,
         )
 
-    def autocorr(self):
+    def autocorr(self):  # noqa: PLR0915
         """
         Calculate the autocorrelation along time.
 
-        Returns:
+        Returns
+        -------
             xarray.DataArray with lag1 autocorrelation
         """
         xx = self._obj
@@ -675,9 +647,7 @@ class PixelAlgorithms(AccessorBase):
                 if len(xx.chunks[0]) != 1:
                     xx = xx.chunk({"time": -1})
 
-                data = da.map_blocks(
-                    ops.autocorr_tyx, xx.data, nodata, dtype="float32", drop_axis=0
-                )
+                data = da.map_blocks(ops.autocorr_tyx, xx.data, nodata, dtype="float32", drop_axis=0)
             else:
                 data = ops.autocorr_tyx(xx.data, nodata)
 
@@ -693,10 +663,13 @@ class PixelAlgorithms(AccessorBase):
             output_dtypes=["float32"],
         )
 
-    def mktrend(self):
+    def mktrend(self):  # noqa: PLR0915
         """Calculate the Mann-Kendall trend along the time dimension."""
         # pylint: disable=import-outside-toplevel
-        from .ops.stats import _mann_kendall_trend_gu, _mann_kendall_trend_gu_nd
+        from .ops.stats import (  # noqa: PLC0415
+            _mann_kendall_trend_gu,
+            _mann_kendall_trend_gu_nd,
+        )
 
         nodata = self._obj.attrs.get("nodata", None)
         if nodata is None:
@@ -724,19 +697,16 @@ class PixelAlgorithms(AccessorBase):
             )
 
         x = xarray.merge(
-            [
-                xx.to_dataset(name=n)
-                for xx, n in zip(x, ["tau", "pvalue", "slope", "trend"])
-            ]
+            [xx.to_dataset(name=n) for xx, n in zip(x, ["tau", "pvalue", "slope", "trend"])]
         )
 
         x.trend.attrs["nodata"] = -2
         return x
 
-    def mean_grp(
+    def mean_grp(  # noqa: PLR0915
         self,
         groups: Iterable[int],
-        nodata: Optional[Union[int, float]] = None,
+        nodata: int | float | None = None,
     ):
         """Calculate mean over groups along time dimension.
 
@@ -751,7 +721,7 @@ class PixelAlgorithms(AccessorBase):
             raise MissingTimeError("Grouped mean requires a time dimension!")
 
         # pylint: disable=import-outside-toplevel
-        from .ops.stats import mean_grp
+        from .ops.stats import mean_grp  # noqa: PLC0415
 
         if nodata is None:
             nodata = self._obj.attrs.get("nodata", None)
@@ -759,11 +729,7 @@ class PixelAlgorithms(AccessorBase):
         if nodata is None:
             raise ValueError("Need to define nodata value!")
 
-        groups = (
-            np.array(groups, dtype="int16")
-            if not isinstance(groups, np.ndarray)
-            else groups
-        )
+        groups = np.array(groups, dtype="int16") if not isinstance(groups, np.ndarray) else groups
 
         if groups.size != self._obj.time.size:
             raise ValueError("Need array of groups same length as time dimension!")
@@ -792,16 +758,14 @@ class RollingWindowAlgos(AccessorBase):
         window_size: int,
         dtype: str = "float32",
         dimension: str = "time",
-        nodata: Optional[Union[int, float]] = None,
+        nodata: int | float | None = None,
     ):
         # pylint: disable=import-outside-toplevel
-        from .ops.stats import rolling_sum
+        from .ops.stats import rolling_sum  # noqa: PLC0415
 
         if nodata is None:
             if (nodata := self._obj.attrs.get("nodata")) is None:
-                raise ValueError(
-                    "Need nodata attribute defined, or nodata argument provided."
-                )
+                raise ValueError("Need nodata attribute defined, or nodata argument provided.")
 
         xx = xarray.apply_ufunc(
             rolling_sum,
@@ -821,13 +785,13 @@ class RollingWindowAlgos(AccessorBase):
 class ZonalStatistics(AccessorBase):
     """Class to claculate zonal statistics."""
 
-    def mean(
+    def mean(  # noqa: PLR0915
         self,
         zones: xarray.DataArray,
-        zone_ids: Union[List, np.ndarray],
+        zone_ids: list | np.ndarray,
         dtype: str = "float32",
         dim_name: str = "zones",
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> xarray.DataArray:
         """Calculate the zonal mean.
 
@@ -844,7 +808,9 @@ class ZonalStatistics(AccessorBase):
             dim_name: name for new output dimension
             name: name for output dataarray
         """
-        from .ops.zonal import do_mean  # pylint: disable=import-outside-toplevel
+        from .ops.zonal import (  # noqa: PLC0415
+            do_mean,
+        )
 
         xx = self._obj
 
@@ -871,8 +837,8 @@ class ZonalStatistics(AccessorBase):
             "stat": ["mean", "valid"],
         }
 
-        # convert str datatype to type
-        dtype = np.dtype(dtype).type
+        # Convert string dtype to numpy dtype type for numba
+        dtype_type = np.dtype(dtype).type
 
         if is_dask_collection(xx):
             dask_name = name
@@ -891,7 +857,7 @@ class ZonalStatistics(AccessorBase):
                 drop_axis=[1, 2],
                 new_axis=[1, 2],
                 chunks=chunks,
-                out_dtype=dtype,
+                out_dtype=dtype_type,
                 name=dask_name,
             )
         else:
@@ -901,12 +867,10 @@ class ZonalStatistics(AccessorBase):
                 num_zones,
                 xx.nodata,
                 zones.nodata,
-                out_dtype=dtype,
+                out_dtype=dtype_type,
             )
 
-        return xarray.DataArray(
-            data=data, dims=dims, coords=coords, attrs=attrs, name=name
-        )
+        return xarray.DataArray(data=data, dims=dims, coords=coords, attrs=attrs, name=name)
 
 
 @xarray.register_dataset_accessor("hdc")

@@ -13,7 +13,9 @@ def ws2d(y, lmda, w):
         y (numpy.array): raw data array (1d, expected in float64)
         lmda (double): S value
         w (numpy.array): weights vector (1d, expected in float64)
-    Returns:
+
+    Returns
+    -------
         z (numpy.array): smoothed data array (1d)
     """
     n = y.shape[0]

@@ -1,7 +1,7 @@
 """Dekad helper class."""
 
 from datetime import date, datetime, timedelta
-from typing import Tuple, Union, overload
+from typing import Union, overload
 
 
 class Dekad:
@@ -17,12 +17,12 @@ class Dekad:
 
     __slots__ = ("_dkd",)
 
-    def __init__(self, dekad: Union[str, int, datetime, date]):
+    def __init__(self, dekad: str | int | datetime | date):  # noqa: PLR0915
         """Format ``YYYYMMd{1,2,3}``."""
         if isinstance(dekad, str):
             year, month, idx = int(dekad[:4]), int(dekad[4:6]), int(dekad[-1])
-            assert 1 <= month <= 12
-            assert 1 <= idx <= 3
+            assert 1 <= month <= 12  # noqa: PLR2004
+            assert 1 <= idx <= 3  # noqa: PLR2004
             self._dkd = 36 * year + 3 * (month - 1) + (idx - 1)
         elif isinstance(dekad, (date, datetime)):
             d = dekad
@@ -66,7 +66,7 @@ class Dekad:
 
     def __repr__(self):
         """Return string representation."""
-        return f'Dekad("{str(self)}")'
+        return f'Dekad("{self!s}")'
 
     def __hash__(self):
         """Return Hash."""
@@ -105,7 +105,7 @@ class Dekad:
         return self._dkd <= other._dkd
 
     def __ge__(self, other: Union[str, int, datetime, date, "Dekad"]) -> bool:
-        """Check for greater than or equal inequality with other Dekad, string or int."""
+        """Check for greater than or equal inequality."""
         if isinstance(other, (str, int, datetime, date)):
             other = Dekad(other)
         if not isinstance(other, Dekad):
@@ -123,7 +123,7 @@ class Dekad:
         return (self + 1).start_date - timedelta(microseconds=1)
 
     @property
-    def date_range(self) -> Tuple[datetime, datetime]:
+    def date_range(self) -> tuple[datetime, datetime]:
         """Start and end dates as python ``datetime``."""
         return self.start_date, self.end_date
 
@@ -141,12 +141,10 @@ class Dekad:
         return Dekad(self._dkd + n)
 
     @overload
-    def __sub__(self, other: int) -> "Dekad":
-        """Subtraction with integer."""
+    def __sub__(self, other: int) -> "Dekad": ...
 
     @overload
-    def __sub__(self, other: "Dekad") -> int:
-        """Subtraction with Dekad."""
+    def __sub__(self, other: "Dekad") -> int: ...
 
     def __sub__(self, other: Union[int, "Dekad"]) -> Union["Dekad", int]:
         """Subtraction with integer|Dekad."""

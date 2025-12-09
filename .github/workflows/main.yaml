@@ -4,115 +4,83 @@ on:
   pull_request:
 
 jobs:
-  pyenv:
+  format:
     runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.cfg.outputs.cache-key }}
-      cache-path: ${{ steps.cfg.outputs.cache-path }}
-
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
-      - name: cfg
-        id: cfg
+          python-version-file: ".python-version"
+      
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+      
+      - name: Run ruff format
         run: |
-          cache_path="${{ env.pythonLocation }}"
-          cache_key="${cache_path}-${{ hashFiles('requirements.txt', 'requirements_dev.txt') }}"
-          echo "cache-key=${cache_key}" >> $GITHUB_OUTPUT
-          echo "cache-path=${cache_path}" >> $GITHUB_OUTPUT
-      - name: cache deps
-        uses: actions/cache@v4
-        id: py_cache
-        with:
-          path: ${{ steps.cfg.outputs.cache-path }}
-          key: ${{ steps.cfg.outputs.cache-key }}
-          restore-keys: |
-            ${{ steps.cfg.outputs.cache-path }}-
-      - name: install dependencies
-        if: steps.py_cache.outputs.cache-hit != 'true'
-        run: |
-          pip install \
-              --upgrade --upgrade-strategy eager \
-              -r requirements.txt \
-              -r requirements_dev.txt
-          pip freeze
-      - name: dump
-        run: |
-          echo $LD_LIBRARY_PATH
-          echo "$PATH"
-          which python
-          python --version
-
-  black:
-    needs:
-      - pyenv
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Get Python Env from Cache
-        uses: actions/cache@v4
-        with:
-          key: ${{ needs.pyenv.outputs.cache-key }}
-          path: ${{ needs.pyenv.outputs.cache-path }}
-      - name: Update PATH
-        run: |
-          echo "${py_path}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${py_path}/lib" >> $GITHUB_ENV
-        env:
-          py_path: ${{ needs.pyenv.outputs.cache-path }}
-
-      - name: run black
-        run: |
-          black --version
-          black --check --diff hdc tests
+          uv run ruff --version
+          uv run ruff format --check hdc tests
 
   linting:
-    needs:
-      - pyenv
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Get Python Env from Cache
-        uses: actions/cache@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          key: ${{ needs.pyenv.outputs.cache-key }}
-          path: ${{ needs.pyenv.outputs.cache-path }}
-      - name: Update PATH
-        run: |
-          echo "${py_path}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${py_path}/lib" >> $GITHUB_ENV
-        env:
-          py_path: ${{ needs.pyenv.outputs.cache-path }}
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: pylint
-        run: pylint hdc
-      - name: pydocstyle
-        run:  pydocstyle hdc
-      - name: mypy
-        run: mypy hdc
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Run ruff check
+        run: |
+          uv run ruff --version
+          uv run ruff check --output-format=github hdc tests
+      
+      - name: Run mypy
+        run: |
+          uv run mypy --version
+          uv run mypy hdc
 
   wheels:
     needs:
-      - pyenv
-      - black
+      - format
+      - linting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Get Python Env from Cache
-        uses: actions/cache@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          key: ${{ needs.pyenv.outputs.cache-key }}
-          path: ${{ needs.pyenv.outputs.cache-path }}
-      - name: Update PATH
-        shell: bash
-        run: |
-          echo "${py_path}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${py_path}/lib" >> $GITHUB_ENV
-        env:
-          py_path: ${{ needs.pyenv.outputs.cache-path }}
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
 
       - uses: actions/cache@v4
         id: wheels_cache
@@ -120,34 +88,20 @@ jobs:
           path: ./wheels
           key: wheels-${{ github.sha }}
 
-      - name: build wheels unpatched
+      - name: Build wheels unpatched
+        if: steps.wheels_cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p wheels
-          pip wheel \
-            --verbose \
-            --no-input \
-            --no-deps \
-            --exists-action w \
-            --wheel-dir wheels \
-          .
-
-          python setup.py sdist -d wheels
-
-      - name: patch version
+          uv build --wheel --out-dir wheels
+      
+      - name: Patch version
         run: |
-          python ./scripts/patch_version.py ${GITHUB_RUN_NUMBER:-0} ./hdc/algo/_version.py
+          uv run python ./scripts/patch_version.py ${GITHUB_RUN_NUMBER:-0} ./hdc/algo/_version.py
 
-      - name: build wheels patched version
+      - name: Build wheels patched version
+        if: steps.wheels_cache.outputs.cache-hit != 'true'
         run: |
-          pip wheel \
-            --verbose \
-            --no-input \
-            --no-deps \
-            --exists-action w \
-            --wheel-dir wheels \
-          .
-
-          python setup.py sdist -d wheels
+          uv build --out-dir wheels
 
       - name: Upload results (artifact)
         uses: actions/upload-artifact@v4
@@ -158,51 +112,52 @@ jobs:
 
   tests:
     needs:
-      - pyenv
-      - black
+      - format
+      - linting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Get Python Env from Cache
-        uses: actions/cache@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          key: ${{ needs.pyenv.outputs.cache-key }}
-          path: ${{ needs.pyenv.outputs.cache-path }}
-      - name: Update PATH
-        shell: bash
-        run: |
-          echo "${py_path}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${py_path}/lib" >> $GITHUB_ENV
-        env:
-          py_path: ${{ needs.pyenv.outputs.cache-path }}
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Run test with coverage
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Run tests with coverage
         run: |
-          python -m pytest -s \
+          uv run pytest -s \
             --cov \
             --cov-report=term \
             tests/
 
   test-wheel:
     needs:
-      - pyenv
-      - black
+      - format
+      - linting
       - wheels
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Get Python Env from Cache
-        uses: actions/cache@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          key: ${{ needs.pyenv.outputs.cache-key }}
-          path: ${{ needs.pyenv.outputs.cache-path }}
-      - name: Update PATH
-        shell: bash
-        run: |
-          echo "${py_path}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${py_path}/lib" >> $GITHUB_ENV
-        env:
-          py_path: ${{ needs.pyenv.outputs.cache-path }}
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
 
       - name: Get Wheels
         uses: actions/download-artifact@v4
@@ -212,9 +167,11 @@ jobs:
 
       - name: Install dev wheel
         run: |
-          find wheels/ -type f -name "*.dev*.whl" | head -1 | xargs python -m pip install
+          WHEEL=$(find wheels/ -type f -name "*.dev*.whl" | head -1)
+          uv pip install --system "$WHEEL[stats]"
 
-      - name: Test Code from the wheel
+      - name: Test code from the wheel
         run: |
           cd tests/
-          python -m pytest -s .
+          uv pip install --system pytest
+          uv run --no-project pytest -s .

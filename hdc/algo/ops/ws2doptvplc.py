@@ -1,5 +1,4 @@
-"""
-Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
+"""Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
 
 numba implementations.
 """
@@ -26,8 +25,7 @@ from .ws2doptvp import _ws2doptvp
     )
 )
 def ws2doptvplc(y, nodata, p, lc, out, lopt):
-    """
-    Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
+    """Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
 
     Args:
         y (np.array): raw data array (1d, expected in float64)
@@ -47,9 +45,9 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
             w[ii] = 1
 
     if n > 1:
-        if lc > 0.5:
+        if lc > 0.5:  # noqa: PLR2004
             llas = np.arange(-2, 1.2, 0.2, dtype=float64)
-        elif lc <= 0.5:
+        elif lc <= 0.5:  # noqa: PLR2004
             llas = np.arange(0, 3.2, 0.2, dtype=float64)
         else:
             llas = np.arange(-1, 1.2, 0.2, dtype=float64)
@@ -170,15 +168,15 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
 
 @lazycompile(numba.jit(nopython=True, parallel=True, nogil=True))
 def ws2doptvplc_tyx(tyx, p, nodata):
-    """
-    Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
+    """Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
 
     Args:
         tyx (np.array): raw data array (int16 usually, T,Y,X axis order)
         nodata (double, int): nodata value
         p (float): Envelope value for asymmetric weights
 
-    Returns:
+    Returns
+    -------
        zz  smoothed version of the input data (zz.shape == tyx.shape)
        lopts optimization parameters (lopts.shape == zz.shape[1:])
     """
@@ -224,7 +222,7 @@ def ws2doptvplc_tyx(tyx, p, nodata):
             if ngood > 1:
                 lc = autocorr_1d(xx_raw, nodata)
 
-                llas = _llas[0] if lc > 0.5 else _llas[1]
+                llas = _llas[0] if lc > 0.5 else _llas[1]  # noqa: PLR2004
                 _xx, _lopts = _ws2doptvp(xx, ww, p, llas)
                 np.round(_xx, 0, zz[:, rr, cc])
                 lopts[rr, cc] = _lopts

@@ -67,8 +67,6 @@ def test_get_calibration_indices():
     )
 
     np.testing.assert_array_equal(
-        get_calibration_indices(
-            tix, ("2010-01-15", "2010-12-15"), groups=tix.month.values - 1
-        ),
+        get_calibration_indices(tix, ("2010-01-15", "2010-12-15"), groups=tix.month.values - 1),
         res,
     )

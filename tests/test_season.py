@@ -18,10 +18,7 @@ def test_season():
     seasons = [Season(date, season_ranges) for date in season_dates]
 
     # Test the string representation and hashing
-    assert (
-        repr(seasons[0])
-        == "Season(season_range=[(1, 10), (11, 20), (21, 30)], id=202201)"
-    )
+    assert repr(seasons[0]) == "Season(season_range=[(1, 10), (11, 20), (21, 30)], id=202201)"
     assert hash(seasons[0]) == hash(seasons[0].id)
 
     # Test equality

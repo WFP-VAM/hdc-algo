@@ -3,12 +3,11 @@
 # pyright: reportGeneralTypeIssues=false
 # pylint: disable=C0103,C0301,E0401,R0912,R0913,R0914,R0915,too-many-lines
 from math import log, pow, sqrt  # pylint: disable=W0622
-from typing import Optional, Union
 
-import xarray
 import numpy as np
+import xarray
 from numba import guvectorize, njit
-from numba.core.types import float64, int16, int32, uint8, boolean
+from numba.core.types import boolean, float64, int16, int32, uint8
 
 
 @njit
@@ -20,7 +19,9 @@ def ws2d(y, lmda, w):
         y (np.array): raw data array (1d, expected in float64)
         lmda (double): S value
         w (np.array): weights vector (1d, expected in float64)
-    Returns:
+
+    Returns
+    -------
         z (np.array): smoothed data array (1d)
     """
     n = y.shape[0]
@@ -61,9 +62,7 @@ def ws2d(y, lmda, w):
     return z
 
 
-@guvectorize(
-    [(float64[:], float64, float64, int16[:])], "(n),(),() -> (n)", nopython=True
-)
+@guvectorize([(float64[:], float64, float64, int16[:])], "(n),(),() -> (n)", nopython=True)
 def ws2dgu(y, lmda, nodata, out):
     """
     Whittaker smoother with fixed lambda (S).
@@ -115,9 +114,7 @@ def ws2dpgu(y, lmda, nodata, p, out):
         m = y.shape[0]
 
         # Compute weights for nodata values
-        w = 1 - np.array(
-            [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
-        )
+        w = 1 - np.array([((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64)
         n = np.sum(w)
 
         if n > 1:
@@ -382,8 +379,7 @@ def ws2doptvp(y, nodata, p, llas, out, lopt):
     nopython=True,
 )
 def ws2doptvplc(y, nodata, p, lc, out, lopt):
-    """
-    Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
+    """Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
 
     Args:
         y (np.array): raw data array (1d, expected in float64)
@@ -403,9 +399,9 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt):
             w[ii] = 1
 
     if n > 1:
-        if lc > 0.5:
+        if lc > 0.5:  # noqa: PLR2004
             llas = np.arange(-2, 1.2, 0.2, dtype=float64)
-        elif lc <= 0.5:
+        elif lc <= 0.5:  # noqa: PLR2004
             llas = np.arange(0, 3.2, 0.2, dtype=float64)
         else:
             llas = np.arange(-1, 1.2, 0.2, dtype=float64)
@@ -534,14 +530,18 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
     Whittaker filter Generalized Cross Validation optimization of lambda.
 
     Whittaker Cross Validation (WCV)
-    The Whittaker Smoother is a penalized least square algorithm for smoothing and interpolation
-    of noisy data. The smoothing coefficient optimization allows to automate the right amount of
+    The Whittaker Smoother is a penalized least square algorithm for
+    smoothing and interpolation of noisy data. The smoothing coefficient
+    optimization allows to automate the right amount of
     penalty.
-    References:
+
+    References
+    ----------
     - Eilers, A perfect smoother, https://doi.org/10.1021/ac034173t
     - Eilers, Pesendorfer and Bonifacio, Automatic smoothing of remote sensing data,
       https://doi.org/10.1109/Multi-Temp.2017.8076705
-    - Garcia, Robust smoothing of gridded data in one and higher dimensions with missing values,
+    - Garcia, Robust smoothing of gridded data in one and higher
+      dimensions with missing values,
       https://doi.org/10.1016/j.csda.2009.09.020
 
     Args:
@@ -553,16 +553,14 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
     m = y.shape[0]
 
     # Compute weights for nodata values
-    w = 1 - np.array(
-        [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
-    )
+    w = 1 - np.array([((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64)
     n = np.sum(w)
 
     # Eigenvalues
     d_eigs = -2 + 2 * np.cos(np.arange(m) * np.pi / m)
     d_eigs[0] = 1e-15
 
-    if n > 4:
+    if n > 4:  # noqa: PLR2004
         z = np.zeros(m)
         r_weights = np.ones(m)
 
@@ -605,9 +603,7 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
                 gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
                 r_arr = y - y_temp
 
-                mad = np.median(
-                    np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0]))
-                )
+                mad = np.median(np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0])))
                 u_arr = r_arr / (1.4826 * mad * np.sqrt(1 - gamma.sum() / n))
 
                 r_weights = (1 - (u_arr / 4.685) ** 2) ** 2
@@ -641,18 +637,21 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
     nopython=True,
 )
 def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
-    """
-    Whittaker filter Generalized Cross Validation optimization of lambda and asymmetric weights.
+    """Whittaker filter Generalized Cross Validation optimization of lambda and asymmetric weights.
 
     Whittaker Cross Validation (WCV)
-    The Whittaker Smoother is a penalized least square algorithm for smoothing and interpolation
-    of noisy data. The smoothing coefficient optimization allows to automate the right amount of
+    The Whittaker Smoother is a penalized least square algorithm for
+    smoothing and interpolation of noisy data. The smoothing coefficient
+    optimization allows to automate the right amount of
     penalty.
-    References:
+
+    References
+    ----------
     - Eilers, A perfect smoother, https://doi.org/10.1021/ac034173t
     - Eilers, Pesendorfer and Bonifacio, Automatic smoothing of remote sensing data,
       https://doi.org/10.1109/Multi-Temp.2017.8076705
-    - Garcia, Robust smoothing of gridded data in one and higher dimensions with missing values,
+    - Garcia, Robust smoothing of gridded data in one and higher
+      dimensions with missing values,
       https://doi.org/10.1016/j.csda.2009.09.020
 
     Args:
@@ -665,16 +664,14 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
     m = y.shape[0]
 
     # Compute weights for nodata values
-    w = 1 - np.array(
-        [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
-    )
+    w = 1 - np.array([((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64)
     n = np.sum(w)
 
     # Eigenvalues
     d_eigs = -2 + 2 * np.cos(np.arange(m) * np.pi / m)
     d_eigs[0] = 1e-15
 
-    if n > 4:
+    if n > 4:  # noqa: PLR2004
         z = np.zeros(m)
         znew = np.zeros(m)
         wa = np.zeros(m)
@@ -719,9 +716,7 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
                 gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
                 r_arr = y - y_temp
 
-                mad = np.median(
-                    np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0]))
-                )
+                mad = np.median(np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0])))
                 u_arr = r_arr / (1.4826 * mad * np.sqrt(1 - gamma.sum() / n))
 
                 r_weights = (1 - (u_arr / 4.685) ** 2) ** 2
@@ -767,10 +762,10 @@ def ws2dwcvp(y, nodata, p, llas, robust, out, lopt):
 def whits(
     ds: xarray.Dataset,
     dim: str,
-    nodata: Union[int, float],
-    sg: Optional[xarray.DataArray] = None,
-    s: Optional[float] = None,
-    p: Optional[float] = None,
+    nodata: int | float,
+    sg: xarray.DataArray | None = None,
+    s: float | None = None,
+    p: float | None = None,
 ) -> xarray.Dataset:
     """
     Apply whittaker with fixed S.
@@ -786,7 +781,8 @@ def whits(
         s: S value
         p: Envelope value for asymmetric weights
 
-    Returns:
+    Returns
+    -------
         ds_out: xarray.Dataset with smoothed data
     """
     if sg is None and s is None:
@@ -825,10 +821,10 @@ def whits(
 def whitsvc(
     ds: xarray.Dataset,
     dim: str,
-    nodata: Union[int, float],
-    lc: Optional[xarray.DataArray] = None,
-    srange: Optional[np.ndarray] = None,
-    p: Optional[float] = None,
+    nodata: int | float,
+    lc: xarray.DataArray | None = None,
+    srange: np.ndarray | None = None,
+    p: float | None = None,
 ) -> xarray.Dataset:
     """
     Apply whittaker with V-curve optimization of S.
@@ -838,10 +834,12 @@ def whitsvc(
         dim: dimension to use for filtering
         nodata: nodata value
         lc: lag1 autocorrelation DataArray,
-        srange: values of S for V-curve optimization (mandatory if no autocorrelation raster)
+        srange: values of S for V-curve optimization
+            (mandatory if no autocorrelation raster)
         p: Envelope value for asymmetric weights
 
-    Returns:
+    Returns
+    -------
         ds_out: xarray.Dataset with smoothed data and sgrid
     """
     if lc is not None:
@@ -898,9 +896,9 @@ def whitsvc(
 def whitswcv(
     ds: xarray.Dataset,
     dim: str,
-    nodata: Union[int, float],
-    srange: Optional[np.ndarray] = None,
-    p: Optional[float] = None,
+    nodata: int | float,
+    srange: np.ndarray | None = None,
+    p: float | None = None,
     robust: boolean = True,
 ) -> xarray.Dataset:
     """
@@ -911,11 +909,13 @@ def whitswcv(
         dim: dimension to use for filtering
         nodata: nodata value
         lc: lag1 autocorrelation DataArray,
-        srange: values of S for V-curve optimization (mandatory if no autocorrelation raster)
+        srange: values of S for V-curve optimization
+            (mandatory if no autocorrelation raster)
         p: Envelope value for asymmetric weights
         robust (boolean): perform a robust fitting by computing robust weights if True
 
-    Returns:
+    Returns
+    -------
         ds_out: xarray.Dataset with smoothed data and sgrid
     """
     if p:
@@ -951,9 +951,7 @@ def whitswcv(
     return ds_out
 
 
-def whitint(
-    ds: xarray.Dataset, dim: str, labels_daily: np.ndarray, template: np.ndarray
-):
+def whitint(ds: xarray.Dataset, dim: str, labels_daily: np.ndarray, template: np.ndarray):
     """Perform temporal interpolation using the Whittaker filter."""
     template_out = np.zeros(np.unique(labels_daily).size, dtype="u1")
 
@@ -1032,7 +1030,8 @@ def lag1corr(ds: xarray.Dataset, dim: str):
         ds: input dataset,
         dim: dimension to use for calculation
 
-    Returns:
+    Returns
+    -------
         xarray.DataArray with lag1 autocorrelation
     """
     return xarray.apply_ufunc(

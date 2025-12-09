@@ -2,7 +2,7 @@
 
 import numpy as np
 from numba import guvectorize
-from numba.core.types import float64, int16, boolean
+from numba.core.types import boolean, float64, int16
 
 from ._helper import lazycompile
 from .ws2d import ws2d
@@ -20,14 +20,18 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
     Whittaker filter Generalized Cross Validation optimization of lambda.
 
     Whittaker Cross Validation (WCV)
-    The Whittaker Smoother is a penalized least square algorithm for smoothing and interpolation
-    of noisy data. The smoothing coefficient optimization allows to automate the right amount of
+    The Whittaker Smoother is a penalized least square algorithm for
+    smoothing and interpolation of noisy data. The smoothing coefficient
+    optimization allows to automate the right amount of
     penalty.
-    References:
+
+    References
+    ----------
     - Eilers, A perfect smoother, https://doi.org/10.1021/ac034173t
-    - Eilers, Pesendorfer and Bonifacio, Automatic smoothing of remote sensing data,
-      https://doi.org/10.1109/Multi-Temp.2017.8076705
-    - Garcia, Robust smoothing of gridded data in one and higher dimensions with missing values,
+    - Eilers, Pesendorfer and Bonifacio, Automatic smoothing of remote
+      sensing data, https://doi.org/10.1109/Multi-Temp.2017.8076705
+    - Garcia, Robust smoothing of gridded data in one and higher
+      dimensions with missing values,
       https://doi.org/10.1016/j.csda.2009.09.020
 
     Args:
@@ -39,16 +43,14 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
     m = y.shape[0]
 
     # Compute weights for nodata values
-    w = 1 - np.array(
-        [((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64
-    )
+    w = 1 - np.array([((x == nodata) or np.isnan(x) or np.isinf(x)) for x in y], dtype=float64)
     n = np.sum(w)
 
     # Eigenvalues
     d_eigs = -2 + 2 * np.cos(np.arange(m) * np.pi / m)
     d_eigs[0] = 1e-15
 
-    if n > 4:
+    if n > 4:  # noqa: PLR2004
         z = np.zeros(m)
         r_weights = np.ones(m)
 
@@ -91,9 +93,7 @@ def ws2dwcv(y, nodata, llas, robust, out, lopt):
                 gamma = w_temp / (w_temp + s * ((-1 * d_eigs) ** 2))
                 r_arr = y - y_temp
 
-                mad = np.median(
-                    np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0]))
-                )
+                mad = np.median(np.abs(r_arr[r_weights != 0] - np.median(r_arr[r_weights != 0])))
                 u_arr = r_arr / (1.4826 * mad * np.sqrt(1 - gamma.sum() / n))
 
                 r_weights = (1 - (u_arr / 4.685) ** 2) ** 2
