@@ -1,6 +1,6 @@
 [project]
 name = "hdc-algo"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dynamic = ["version"]
 description = "Algorithmic components for the Humanitarian Data Cube"
 readme = {file = "README.md", content-type = "text/markdown"}
