@@ -837,7 +837,7 @@ class ZonalStatistics(AccessorBase):
             "stat": ["mean", "valid"],
         }
 
-        # convert str datatype to type
+        # Convert string dtype to numpy dtype type for numba
         dtype_type = np.dtype(dtype).type
 
         if is_dask_collection(xx):
@@ -857,7 +857,7 @@ class ZonalStatistics(AccessorBase):
                 drop_axis=[1, 2],
                 new_axis=[1, 2],
                 chunks=chunks,
-                out_dtype=dtype,
+                out_dtype=dtype_type,
                 name=dask_name,
             )
         else:
@@ -867,7 +867,7 @@ class ZonalStatistics(AccessorBase):
                 num_zones,
                 xx.nodata,
                 zones.nodata,
-                out_dtype=dtype,
+                out_dtype=dtype_type,
             )
 
         return xarray.DataArray(data=data, dims=dims, coords=coords, attrs=attrs, name=name)

@@ -24,6 +24,7 @@ dependencies = [
     "dask[array]>=2024.10.0",
     "numba",
     "numpy>=2",
+    "pandas>=2",
     "xarray",
 ]
 
