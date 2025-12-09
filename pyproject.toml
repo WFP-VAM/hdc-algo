@@ -56,8 +56,10 @@ build = [
 [dependency-groups]
 dev = [
     "mypy>=1.19.0",
+    "pandas-stubs",
     "pytest>=9.0.2",
     "ruff>=0.14.8",
+    "scipy-stubs",
 ]
 
 [tool.ruff]
@@ -118,6 +120,13 @@ max-statements = 8  # Maximum number of statements in function
 exclude = [
     "hdc/algo/vendor",
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    "numba.*",
+    "numba.core.types.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

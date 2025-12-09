@@ -838,7 +838,7 @@ class ZonalStatistics(AccessorBase):
         }
 
         # convert str datatype to type
-        dtype = np.dtype(dtype).type
+        dtype_type = np.dtype(dtype).type
 
         if is_dask_collection(xx):
             dask_name = name

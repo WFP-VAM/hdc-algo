@@ -1,12 +1,13 @@
 """hcd-algo utility functions."""
 
 from collections.abc import Iterable
+from typing import TypeAlias
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-DateType = str | pd.Timestamp | np.datetime64
+DateType: TypeAlias = str | pd.Timestamp | np.datetime64
 
 
 def to_linspace(x) -> tuple[NDArray[(np.int16,)], list[int]]:
@@ -61,8 +62,8 @@ def get_calibration_indices(
         return np.array(
             [
                 [
-                    _get_ix(time[groups == ix].values, begin, "left"),
-                    _get_ix(time[groups == ix].values, end, "right"),
+                    _get_ix(time[groups == ix].values, begin, "left"),  # type: ignore[attr-defined]
+                    _get_ix(time[groups == ix].values, end, "right"),  # type: ignore[attr-defined]
                 ]
                 for ix in range(num_groups)
             ],
