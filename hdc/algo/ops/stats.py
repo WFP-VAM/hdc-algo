@@ -3,7 +3,13 @@
 from math import erf, log, sqrt
 
 import numpy as np
-import scipy.special as sc
+
+try:
+    import bottleneck as bn  # type: ignore[import-not-found]
+    import scipy.special as sc
+except ImportError as exc:
+    raise RuntimeError("bottleneck and scipy are required for this module") from exc
+
 from numba import guvectorize, njit
 
 from ..vendor.numba_scipy import _init_extension
@@ -554,3 +560,53 @@ def rolling_sum(xx, window_size, nodata, yy):
                 yy[ii] = nodata
                 continue
             yy[ii] += xx[jj]
+
+
+def percentileofscores(x, axis: int = 0) -> np.ndarray:
+    """Calculate percentile of scores.
+
+    Calculates the percentiles of scores based on the rank data.
+    Note: this differs from scipy.stats.percentilesofscore
+
+    Args:
+        x: array of scores
+        axis: axis to calculate percentiles along
+
+    Returns
+    -------
+        array of percentiles
+    """
+    if axis > x.ndim - 1:
+        raise ValueError(f"Axis {axis} is out of bounds for array with {x.ndim} dimensions")
+
+    return (bn.nanrankdata(x, axis) - 1 / 3) / (x.shape[axis] + 1 / 3)
+
+
+def apply_logit(x: np.ndarray, out: np.ndarray | None = None) -> np.ndarray:
+    """Apply logit transformation to array.
+
+    This is a wrapper around the scipy.special.logit function.
+
+    Args:
+        x: array to apply logit transformation to
+
+    Returns
+    -------
+        array of logit transformed values
+    """
+    return sc.logit(x, out)
+
+
+def apply_invlogit(x: np.ndarray) -> np.ndarray:
+    """Apply inverse logit transformation to array.
+
+    This is a wrapper around the scipy.special.expit function.
+
+    Args:
+        x: array to apply inverse logit transformation to
+
+    Returns
+    -------
+        array of inverse logit transformed values
+    """
+    return sc.expit(x)

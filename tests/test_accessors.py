@@ -1131,3 +1131,63 @@ def test_mean_grp_exc(darr):
 
     with pytest.raises(MissingTimeError):
         darr.rename(time="foo").hdc.algo.mean_grp(grps)
+
+
+def test_theta(darr):
+    """Test theta anomaly calculation."""
+    result = darr.hdc.anom.theta()
+    # Dimensions may be reordered by apply_ufunc, but should contain same dims
+    assert set(result.dims) == set(darr.dims)
+    assert result.dtype in ["float32", "float64"]
+    # Check that result is finite (logit transformation)
+    assert np.isfinite(result).all()
+
+
+def test_theta_nodata(darr):
+    """Test theta with explicit nodata."""
+    darr[:, 0, 0] = -9999
+    result = darr.hdc.anom.theta(nodata=-9999)
+    assert set(result.dims) == set(darr.dims)
+    assert result.dtype == "float32"
+
+
+def test_theta_missing_dimension(darr):
+    """Test theta raises error for missing dimension."""
+    with pytest.raises(ValueError, match="Dimension foo not found"):
+        darr.hdc.anom.theta(dim_name="foo")
+
+
+def test_logit(darr):
+    """Test logit transformation."""
+    # Use values strictly between 0 and 1 for logit (avoid 0 and 1 which give inf)
+    test_data = (darr - darr.min()) / (darr.max() - darr.min() + 1e-6)
+    test_data = test_data * 0.98 + 0.01  # Scale to (0.01, 0.99)
+    result = test_data.hdc.algo.logit()
+    assert set(result.dims) == set(test_data.dims)
+    # Logit of values in (0, 1) should be finite
+    assert np.isfinite(result).all()
+
+
+def test_invlogit(darr):
+    """Test inverse logit transformation."""
+    # Use any values (invlogit accepts any real number)
+    result = darr.hdc.algo.invlogit()
+    assert set(result.dims) == set(darr.dims)
+    # Invlogit should always be between 0 and 1
+    assert (result >= 0).all()
+    assert (result <= 1).all()
+
+
+def test_logit_invlogit_roundtrip(darr):
+    """Test that logit and invlogit are inverse operations."""
+    # Use values strictly between 0 and 1 for logit
+    test_data = (darr - darr.min()) / (darr.max() - darr.min() + 1e-6)
+    test_data = test_data * 0.98 + 0.01  # Scale to (0.01, 0.99)
+    logit_result = test_data.hdc.algo.logit()
+    invlogit_result = logit_result.hdc.algo.invlogit()
+    # Should recover original values approximately (transpose to match dimension order)
+    np.testing.assert_allclose(
+        test_data.transpose(*invlogit_result.dims).values,
+        invlogit_result.values,
+        rtol=1e-5,
+    )
