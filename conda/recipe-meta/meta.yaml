@@ -1,6 +1,6 @@
 {% set name = "hdc-algo" %}
-{% set data = load_setup_py_data() %}
-{% set version = os.environ.get("VERSION", "") or data.get("version").replace("-dev", ".dev") %}
+{% set pyproject = load_file_data('pyproject.toml') %}
+{% set version = os.environ.get("VERSION", "") or pyproject.get("version", "0.0.0").replace("-dev", ".dev") %}
 {% set build = os.environ.get("BUILD", "0") %}
 
 source:
@@ -17,11 +17,13 @@ build:
 requirements:
   host:
     - python >=3.7
+    - hatchling
     - hdc-algo-core {{ version }}
   run:
     - python >=3.7
     - {{ pin_compatible('hdc-algo-core', max_pin='x.x.x') }}
     - scipy
+    - bottleneck
 
 test:
   imports:
