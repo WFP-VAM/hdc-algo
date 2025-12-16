@@ -19,6 +19,8 @@ from hdc.algo.ops import (
     ws2dwcvp,
 )
 from hdc.algo.ops.stats import (
+    apply_invlogit,
+    apply_logit,
     brentq,
     gammafit,
     gammastd,
@@ -31,6 +33,7 @@ from hdc.algo.ops.stats import (
     mk_sens_slope,
     mk_variance_s,
     mk_z_score,
+    percentileofscores,
     rolling_sum,
 )
 
@@ -323,3 +326,51 @@ def test_mann_kendall_trend_1d_trend(ts):
 
     *_, trend = mann_kendall_trend_1d.py_func(ts - np.arange(ts.size))
     assert trend == -1
+
+
+def test_percentileofscores():
+    """Test percentileofscores function."""
+    x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    result = percentileofscores(x, axis=0)
+    assert result.shape == x.shape
+    # Percentiles should be between 0 and 1
+    assert (result >= 0).all()
+    assert (result <= 1).all()
+
+
+def test_percentileofscores_axis_error():
+    """Test percentileofscores raises error for invalid axis."""
+    x = np.array([[1, 2, 3], [4, 5, 6]])
+    with pytest.raises(ValueError, match="Axis 2 is out of bounds"):
+        percentileofscores(x, axis=2)
+
+
+def test_apply_logit():
+    """Test apply_logit function."""
+    x = np.array([0.1, 0.5, 0.9])
+    result = apply_logit(x)
+    assert result.shape == x.shape
+    # Logit of values in (0, 1) should be finite
+    assert np.isfinite(result).all()
+    # Logit of 0.5 should be close to 0
+    assert abs(result[1]) < 0.01
+
+
+def test_apply_invlogit():
+    """Test apply_invlogit function."""
+    x = np.array([-2, 0, 2])
+    result = apply_invlogit(x)
+    assert result.shape == x.shape
+    # Invlogit should always be between 0 and 1
+    assert (result >= 0).all()
+    assert (result <= 1).all()
+    # Invlogit of 0 should be 0.5
+    assert abs(result[1] - 0.5) < 0.01
+
+
+def test_logit_invlogit_roundtrip():
+    """Test that logit and invlogit are inverse operations."""
+    x = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    logit_result = apply_logit(x)
+    invlogit_result = apply_invlogit(logit_result)
+    np.testing.assert_allclose(x, invlogit_result, rtol=1e-5)

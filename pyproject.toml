@@ -46,6 +46,7 @@ packages = ["hdc"]
 
 [project.optional-dependencies]
 stats = [
+    "bottleneck>=1.6.0",
     "scipy",
 ]
 build = [
@@ -127,6 +128,7 @@ exclude = [
 module = [
     "numba.*",
     "numba.core.types.*",
+    "bottleneck.*",
 ]
 ignore_missing_imports = true
 

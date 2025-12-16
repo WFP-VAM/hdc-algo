@@ -258,6 +258,62 @@ class Anomalies(AccessorBase):
         """Calculate anomaly as difference."""
         return (self._obj + offset) - (reference + offset)
 
+    def theta(  # noqa: PLR0915
+        self,
+        dim_name: str = "time",
+        nodata: int | float | None = None,
+    ) -> xarray.DataArray:
+        """Calculate the Theta anomaly.
+
+        Tis function calculates the Theta anomaly needed for crating combinded indices
+        such as the Combined Drought Index (CDI).
+        The anomaly is calculated as the logit of an the percentiles derived from the input. In practice,
+        the slices in the input dimension are historical observations at the same point of the year.
+
+        Args:
+            dim_name: name of the dimension to calculate the anomaly along (default: "time")
+            nodata: nodata value to mask out (default: None)
+
+        Returns
+        -------
+            xarray.DataArray with the Theta anomaly
+        """
+        import bottleneck as bn  # noqa: PLC0415
+
+        from .ops.stats import apply_logit, percentileofscores  # noqa: PLC0415
+
+        def _theta(x: np.ndarray, axis: int) -> np.ndarray:
+            if bn.allnan(x):
+                return x.astype("float32")
+            out = percentileofscores(x, axis)
+            result = apply_logit(out, out)
+            return result.astype("float32")
+
+        axis = next((x for x, y in enumerate(self._obj.dims) if y == dim_name), None)
+        if axis is None:
+            raise ValueError(f"Dimension {dim_name} not found in {self._obj.dims}")
+
+        if nodata is None:
+            if (nodata := self._obj.attrs.get("nodata", None)) is None:
+                raise ValueError("Need nodata attribute defined, or nodata argument provided.")
+
+        _xx = self._obj.where(self._obj != nodata)
+
+        # datatype must be float32 for bottleneck performance
+        if _xx.dtype != "float32":
+            _xx = _xx.astype("float32")
+
+        return xarray.apply_ufunc(
+            _theta,
+            _xx,
+            kwargs={"axis": axis},
+            input_core_dims=[[dim_name]],
+            output_core_dims=[[dim_name]],
+            output_dtypes=["float32"],
+            keep_attrs=False,
+            dask="parallelized",
+        )
+
 
 class WhittakerSmoother(AccessorBase):
     """Class for applying different version of the Whittaker smoother."""
@@ -747,6 +803,28 @@ class PixelAlgorithms(AccessorBase):
             keep_attrs=True,
             dask="parallelized",
             dask_gufunc_kwargs={"meta": self._obj.data},
+        )
+
+    def logit(self, dim_name: str = "time"):
+        """Calculate the logit of the input."""
+        from .ops.stats import apply_logit  # noqa: PLC0415
+
+        return xarray.apply_ufunc(
+            apply_logit,
+            self._obj,
+            keep_attrs=True,
+            dask="parallelized",
+        )
+
+    def invlogit(self, dim_name: str = "time"):
+        """Calculate the inverse logit of the input."""
+        from .ops.stats import apply_invlogit  # noqa: PLC0415
+
+        return xarray.apply_ufunc(
+            apply_invlogit,
+            self._obj,
+            keep_attrs=True,
+            dask="parallelized",
         )
 
 
