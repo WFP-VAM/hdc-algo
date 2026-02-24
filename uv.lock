@@ -363,7 +363,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bottleneck", marker = "extra == 'stats'", specifier = ">=1.6.0" },
-    { name = "dask", extras = ["array"], specifier = ">=2024.10.0" },
+    { name = "dask", extras = ["array"] },
     { name = "numba" },
     { name = "numpy", specifier = ">=2" },
     { name = "packaging", marker = "extra == 'build'", specifier = ">=25.0" },
