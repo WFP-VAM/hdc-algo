@@ -541,7 +541,7 @@ class WhittakerSmoother(AccessorBase):
 class PixelAlgorithms(AccessorBase):
     """Set of algorithms to be applied to pixel timeseries."""
 
-    def spi(  # noqa: PLR0912,PLR0915
+    def spi(
         self,
         calibration_begin: str | None = None,
         calibration_end: str | None = None,
@@ -561,15 +561,40 @@ class PixelAlgorithms(AccessorBase):
         This is intended to be used when SPI should be calculated for
         specific timesteps.
         """
+        from .ops.stats import gammastd_grp, gammastd_yxt  # noqa: PLC0415
+
+        return self._standardized(
+            "spi",
+            gammastd_yxt,
+            gammastd_grp,
+            calibration_begin,
+            calibration_end,
+            nodata,
+            groups,
+            dtype,
+        )
+
+    def _standardized(  # noqa: PLR0912,PLR0915
+        self,
+        index: str,
+        kernel,
+        kernel_grp,
+        calibration_begin: str | None,
+        calibration_end: str | None,
+        nodata: float | int | None,
+        groups: Iterable[int | float | str] | None,
+        dtype: str,
+    ):
+        """Apply a standardized index kernel along time, optionally per group.
+
+        `index` names the index in error messages and prefixes the calibration attrs.
+        """
         if not self._check_for_timedim():
-            raise MissingTimeError("SPI requires a time dimension!")
+            raise MissingTimeError(f"{index.upper()} requires a time dimension!")
 
         if nodata is None:
             if (nodata := self._obj.attrs.get("nodata")) is None:
                 raise ValueError("Need nodata attribute defined, or nodata argument provided.")
-
-        # pylint: disable=import-outside-toplevel
-        from .ops.stats import gammastd_grp, gammastd_yxt  # noqa: PLC0415
 
         tix = self._obj.get_index("time")
 
@@ -593,11 +618,12 @@ class PixelAlgorithms(AccessorBase):
 
             if abs(calstop_ix - calstart_ix) <= 1:
                 raise ValueError(
-                    "Timeseries too short for calculating SPI. Please adjust calibration period!"
+                    f"Timeseries too short for calculating {index.upper()}. "
+                    "Please adjust calibration period!"
                 )
 
             res = xarray.apply_ufunc(
-                gammastd_yxt,
+                kernel,
                 self._obj,
                 kwargs={
                     "nodata": nodata,
@@ -631,11 +657,12 @@ class PixelAlgorithms(AccessorBase):
 
             if np.any(np.diff(cal_indices, axis=1) <= 1):
                 raise ValueError(
-                    "Timeseries too short for calculating SPI. Please adjust calibration period!"
+                    f"Timeseries too short for calculating {index.upper()}. "
+                    "Please adjust calibration period!"
                 )
 
             res = xarray.apply_ufunc(
-                gammastd_grp,
+                kernel_grp,
                 self._obj,
                 groups,
                 num_groups,
@@ -650,8 +677,8 @@ class PixelAlgorithms(AccessorBase):
 
         res.attrs.update(
             {
-                "spi_calibration_begin": str(tix[tix >= calibration_begin][0]),
-                "spi_calibration_end": str(tix[tix <= calibration_end][-1]),
+                f"{index}_calibration_begin": str(tix[tix >= calibration_begin][0]),
+                f"{index}_calibration_end": str(tix[tix <= calibration_end][-1]),
             }
         )
 
