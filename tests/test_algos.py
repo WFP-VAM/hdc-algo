@@ -3,6 +3,7 @@
 # pylint: disable=no-name-in-module,redefined-outer-name,no-value-for-parameter
 # pyright: reportGeneralTypeIssues=false
 import numpy as np
+import pandas as pd
 import pytest
 from scipy import stats
 
@@ -483,3 +484,38 @@ def test_glostd_grp(ts_fisk):
     for g in range(4):
         ref = glostd(x[grps == g], -9999.0, 0, 100)
         np.testing.assert_array_equal(res[grps == g], np.round(ref * 1000))
+
+
+@pytest.fixture(scope="module")
+def spei_r(data_dir):
+    """SPEI reference values from R `SPEI::spei` 1.8.1 (log-Logistic, ub-pwm, scale 1)."""
+    return pd.read_csv(data_dir / "spei-r.csv")
+
+
+@pytest.mark.parametrize(
+    "case, cal",
+    [
+        ("plain", (0, 200)),
+        ("calib", (50, 150)),
+        ("leftskew", (0, 200)),
+        ("gaps", (0, 200)),
+        ("support", (0, 200)),
+    ],
+)
+def test_glostd_r_reference(spei_r, case, cal):
+    df = spei_r[spei_r.case == case]
+    x = df.x.fillna(-9999).to_numpy("float64")
+    ref = df.spei.to_numpy()
+    z = glostd(x, -9999.0, *cal)
+    # R gives NA for gaps and -Inf/Inf outside the fitted support, we give nodata
+    np.testing.assert_array_equal(z == -9999, ~np.isfinite(ref))
+    np.testing.assert_allclose(z[np.isfinite(ref)], ref[np.isfinite(ref)], rtol=0, atol=1e-10)
+
+
+def test_glostd_grp_r_reference(spei_r):
+    df = spei_r[spei_r.case == "grouped"]
+    grps = (np.arange(len(df)) % 12).astype("int16")
+    res = glostd_grp(
+        df.x.to_numpy("float64"), grps, 12, -9999.0, np.array([[0, 30]] * 12, dtype="int16")
+    )
+    np.testing.assert_allclose(res, np.round(df.spei.to_numpy() * 1000), rtol=0, atol=1)
