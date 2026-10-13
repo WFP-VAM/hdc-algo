@@ -4,6 +4,7 @@
 # pyright: reportGeneralTypeIssues=false
 import numpy as np
 import pytest
+from scipy import stats
 
 from hdc.algo.ops import (
     autocorr,
@@ -26,6 +27,12 @@ from hdc.algo.ops.stats import (
     gammastd,
     gammastd_grp,
     gammastd_yxt,
+    glo_cdf,
+    glo_fit,
+    glostd,
+    glostd_grp,
+    glostd_gu,
+    lmoments_ub,
     mann_kendall_trend_1d,
     mean_grp,
     mk_p_value,
@@ -380,3 +387,99 @@ def test_logit_invlogit_roundtrip():
     logit_result = apply_logit(x)
     invlogit_result = apply_invlogit(logit_result)
     np.testing.assert_allclose(x, invlogit_result, rtol=1e-5)
+
+
+@pytest.fixture
+def ts_fisk():
+    """Log-logistic sample with origin -50, like a water balance."""
+    return stats.fisk(c=4, loc=-50, scale=60).rvs(size=500, random_state=42)
+
+
+def test_lmoments_ub():
+    l1, l2, t3 = lmoments_ub.py_func(np.arange(1, 6, dtype="float64"))
+    assert (l1, l2, t3) == pytest.approx((3, 1, 0))
+
+
+def test_glo_fit_symmetric():
+    xi, alpha, k = glo_fit.py_func(np.arange(1, 6, dtype="float64"))
+    assert (xi, alpha, k) == (3, 1, 0)
+
+
+def test_glo_fit_degenerate():
+    assert glo_fit.py_func(np.full(10, 5.0))[1] == 0
+
+
+def test_glo_fit_recovers():
+    x = stats.fisk(c=4, loc=-50, scale=60).rvs(size=100_000, random_state=42)
+    xi, alpha, k = glo_fit(x)
+    # log-logistic parameters: shape -1/k, origin xi + alpha/k, scale -alpha/k
+    assert -1 / k == pytest.approx(4, rel=0.02)
+    assert xi + alpha / k == pytest.approx(-50, rel=0.02)
+    assert -alpha / k == pytest.approx(60, rel=0.02)
+
+
+def test_glo_cdf_matches_fisk():
+    xi, alpha, k = 10.0, 15.0, -0.25
+    ref = stats.fisk(c=-1 / k, loc=xi + alpha / k, scale=-alpha / k)
+    x = np.linspace(-49, 200, 50)
+    res = [glo_cdf.py_func(v, xi, alpha, k) for v in x]
+    np.testing.assert_allclose(res, ref.cdf(x), rtol=1e-12)
+
+
+def test_glo_cdf_support():
+    assert glo_cdf.py_func(0.0, 0.0, 1.0, 0.0) == 0.5
+    assert glo_cdf.py_func(-10.0, 0.0, 1.0, -0.5) == 0
+    assert glo_cdf.py_func(10.0, 0.0, 1.0, 0.5) == 1
+
+
+def test_glostd(ts_fisk):
+    z = glostd(ts_fisk, -9999.0, 0, ts_fisk.size)
+    assert z.mean() == pytest.approx(0, abs=0.05)
+    assert z.std() == pytest.approx(1, abs=0.05)
+    assert z[ts_fisk.argmin()] == z.min()
+
+
+def test_glostd_nodata(ts_fisk):
+    x = ts_fisk.copy()
+    x[[3, 7]] = -9999
+    x[5] = np.nan
+    z = glostd(x, -9999.0, 0, x.size)
+    assert (z[[3, 5, 7]] == -9999).all()
+    assert (z[[0, 1, 2, 4, 6]] != -9999).all()
+
+
+def test_glostd_too_short(ts_fisk):
+    assert (glostd(ts_fisk, -9999.0, 0, 3) == -9999).all()
+
+
+def test_glostd_out_of_support(ts_fisk):
+    x = np.append(ts_fisk, -1000.0)
+    z = glostd(x, -9999.0, 0, ts_fisk.size)
+    assert z[-1] == -9999
+    assert (z[:-1] != -9999).all()
+
+
+def test_glostd_calibration(ts_fisk):
+    x = ts_fisk.copy()
+    x[300:] += 100
+    z = glostd(x, -9999.0, 0, 300)
+    np.testing.assert_allclose(z[:300], glostd(ts_fisk[:300], -9999.0, 0, 300))
+
+
+def test_glostd_gu(ts_fisk):
+    x = ts_fisk.astype("float32")
+    res = glostd_gu(np.stack([x, x[::-1]]), -9999.0, 0, x.size)
+    ref = glostd(x, -9999.0, 0, x.size)
+    assert res.dtype == "int16"
+    np.testing.assert_array_equal(res[0], np.round(ref * 1000))
+    np.testing.assert_array_equal(res[1], res[0][::-1])
+
+
+def test_glostd_grp(ts_fisk):
+    x = ts_fisk[:400].astype("float32")
+    grps = np.tile(np.arange(4), 100).astype("int16")
+    indices = np.array([[0, 100]] * 4, dtype="int16")
+    res = glostd_grp(x, grps, 4, -9999.0, indices)
+    for g in range(4):
+        ref = glostd(x[grps == g], -9999.0, 0, 100)
+        np.testing.assert_array_equal(res[grps == g], np.round(ref * 1000))

@@ -625,12 +625,10 @@ class PixelAlgorithms(AccessorBase):
             res = xarray.apply_ufunc(
                 kernel,
                 self._obj,
-                kwargs={
-                    "nodata": nodata,
-                    "cal_start": calstart_ix,
-                    "cal_stop": calstop_ix,
-                },
-                input_core_dims=[["time"]],
+                nodata,
+                calstart_ix,
+                calstop_ix,
+                input_core_dims=[["time"], [], [], []],
                 output_core_dims=[["time"]],
                 keep_attrs=True,
                 dask="parallelized",
