@@ -558,7 +558,7 @@ def rolling_sum(xx, window_size, nodata, yy):
         for jj in range(ii - window_size + 1, ii + 1):
             if xx[jj] == nodata:
                 yy[ii] = nodata
-                continue
+                break
             yy[ii] += xx[jj]
 
 

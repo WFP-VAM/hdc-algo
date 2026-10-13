@@ -221,8 +221,14 @@ def test_rolling_sum():
     res = rolling_sum(np.arange(10).astype("float32"), 3, 0)
     np.testing.assert_almost_equal(
         res,
-        np.array([0.0, 0.0, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0], dtype="float32"),
+        np.array([0.0, 0.0, 0.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0], dtype="float32"),
     )
+
+
+def test_rolling_sum_nodata():
+    x = np.array([1, 2, -9999, 4, 5, 6], dtype="float32")
+    res = rolling_sum(x, 3, -9999)
+    np.testing.assert_array_equal(res, [-9999, -9999, -9999, -9999, -9999, 15])
 
 
 def test_ws2dgu(ts):
