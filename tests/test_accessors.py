@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from scipy import stats
 
 from hdc.algo import ops
 from hdc.algo.accessors import MissingTimeError
@@ -1191,3 +1192,64 @@ def test_logit_invlogit_roundtrip(darr):
         invlogit_result.values,
         rtol=1e-5,
     )
+
+
+@pytest.fixture
+def wb():
+    x = xr.DataArray(
+        stats.fisk(c=4, loc=-50, scale=60).rvs(size=(180, 2, 2), random_state=42).astype("float32"),
+        dims=("time", "y", "x"),
+        name="band",
+        attrs={"nodata": -9999},
+    )
+    x["time"] = pd.date_range(start="2000-01-01", periods=180, freq="10D")
+    return x
+
+
+def test_algo_spei(wb):
+    res = wb.hdc.algo.spei()
+    ref = ops.stats.glostd_gu(wb.transpose(..., "time").data, -9999.0, 0, 180)
+    assert res.dtype == "int16"
+    assert res.dims == ("y", "x", "time")
+    np.testing.assert_array_equal(res, ref)
+
+
+def test_algo_spei_dask(wb):
+    res = to_da(wb).chunk({"y": 1}).hdc.algo.spei()
+    assert isinstance(res.data, da.Array)
+    xr.testing.assert_equal(res.compute(), wb.hdc.algo.spei())
+
+
+def test_algo_spei_grouped(wb):
+    grps = np.arange(180) % 36
+    res = wb.hdc.algo.spei(groups=grps)
+    ref = ops.stats.glostd_grp(
+        wb.transpose(..., "time").data,
+        grps.astype("int16"),
+        36,
+        -9999.0,
+        np.array([[0, 5]] * 36, dtype="int16"),
+    )
+    np.testing.assert_array_equal(res, ref)
+
+
+def test_algo_spei_calibration(wb):
+    res = wb.hdc.algo.spei(calibration_begin="2000-03-01", calibration_end="2003-01-01")
+    assert res.attrs["spei_calibration_begin"] == "2000-03-01 00:00:00"
+    assert res.attrs["spei_calibration_end"] == "2002-12-26 00:00:00"
+    assert not (res == wb.hdc.algo.spei()).all()
+
+
+def test_algo_spei_nodata(wb):
+    wb[:10, 0, 0] = -9999
+    res = wb.hdc.algo.spei()
+    assert (res[0, 0, :10] == -9999).all()
+    assert (res[0, 0, 10:] != -9999).all()
+    _ = wb.attrs.pop("nodata")
+    with pytest.raises(ValueError):
+        wb.hdc.algo.spei()
+
+
+def test_algo_spei_exception(wb):
+    with pytest.raises(MissingTimeError):
+        wb.isel(time=0).hdc.algo.spei()

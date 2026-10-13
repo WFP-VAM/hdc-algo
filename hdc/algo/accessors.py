@@ -574,6 +574,35 @@ class PixelAlgorithms(AccessorBase):
             dtype,
         )
 
+    def spei(
+        self,
+        calibration_begin: str | None = None,
+        calibration_end: str | None = None,
+        nodata: float | int | None = None,
+        groups: Iterable[int | float | str] | None = None,
+        dtype="int16",
+    ):
+        """Calculate the SPEI along the time dimension.
+
+        Calculates the Standardized Precipitation Evapotranspiration Index from
+        an accumulated climatic water balance (precipitation minus PET), fitting a
+        log-logistic (generalized logistic) distribution with unbiased PWMs, as the
+        R SPEI package. Values outside the fitted distribution's support are set to
+        nodata. Calibration and `groups` work as for `spi`.
+        """
+        from .ops.stats import glostd_grp, glostd_gu  # noqa: PLC0415
+
+        return self._standardized(
+            "spei",
+            glostd_gu,
+            glostd_grp,
+            calibration_begin,
+            calibration_end,
+            nodata,
+            groups,
+            dtype,
+        )
+
     def _standardized(  # noqa: PLR0912,PLR0915
         self,
         index: str,
