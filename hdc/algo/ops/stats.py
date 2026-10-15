@@ -1,6 +1,6 @@
 """Numba accelerated statistical funtions."""
 
-from math import erf, log, sqrt
+from math import erf, exp, log, pi, sin, sqrt
 
 import numpy as np
 
@@ -289,6 +289,144 @@ def gammastd_grp(xx, groups, num_groups, nodata, cal_indices, yy):
 
 
 @njit
+def lmoments_ub(x):
+    """Calculate L-moments `l1`, `l2` and L-skewness `t3` from unbiased PWMs (Hosking 1986).
+
+    `x` must be sorted ascending, with at least 3 values.
+    """
+    n = x.size
+    b0 = 0.0
+    b1 = 0.0
+    b2 = 0.0
+    for j in range(n):
+        b0 += x[j]
+        b1 += x[j] * j / (n - 1)
+        b2 += x[j] * j * (j - 1) / ((n - 1) * (n - 2))
+    b0 /= n
+    b1 /= n
+    b2 /= n
+
+    l2 = 2 * b1 - b0
+    l3 = 6 * b2 - 6 * b1 + b0
+    if l2 <= 0:
+        return b0, l2, 0.0
+    return b0, l2, l3 / l2
+
+
+@njit
+def glo_fit(x):
+    """Fit the generalized logistic distribution to `x` with unbiased PWMs.
+
+    Equivalent to `lmom::pelglo` on unbiased L-moments, as used by the R SPEI package.
+    For `k < 0` this is the 3-parameter log-logistic of Vicente-Serrano et al. (2010).
+    Returns `(xi, alpha, k)`, with `alpha == 0` if the fit is degenerate.
+    """
+    xs = np.sort(x)
+    l1, l2, t3 = lmoments_ub(xs)
+    if l2 <= 0 or abs(t3) >= 1:
+        return 0.0, 0.0, 0.0
+
+    k = -t3
+    if abs(k) <= 1e-6:  # noqa: PLR2004
+        return l1, l2, 0.0
+
+    kk = k * pi / sin(k * pi)
+    alpha = l2 / kk
+    return l1 - alpha * (1 - kk) / k, alpha, k
+
+
+@njit
+def glo_cdf(x, xi, alpha, k):
+    """Generalized logistic CDF, `0` or `1` outside the support (as `lmom::cdfglo`)."""
+    y = (x - xi) / alpha
+    if k != 0:
+        arg = 1 - k * y
+        if arg <= 0:
+            return 0.0 if k < 0 else 1.0
+        y = -log(arg) / k
+    return 1 / (1 + exp(-y))
+
+
+@njit
+def glostd(x, nodata, cal_start, cal_stop):
+    """Calculate a standardized index from a fitted generalized logistic distribution.
+
+    Basis of the SPEI. The distribution is fitted on the valid values of
+    `x[cal_start:cal_stop]`. Values outside the fitted support (CDF of 0 or 1)
+    and all values of series with a degenerate fit or fewer than 4 valid
+    calibration values are set to `nodata`.
+    """
+    t = x.size
+    y = np.full(t, nodata, dtype="float64")
+
+    cal = x[cal_start:cal_stop]
+    valid = np.empty(cal.size, dtype="float64")
+    n = 0
+    for v in cal:
+        if v != nodata and not np.isnan(v):
+            valid[n] = v
+            n += 1
+
+    if n < 4:  # noqa: PLR2004
+        return y
+
+    xi, alpha, k = glo_fit(valid[:n])
+    if alpha == 0:
+        return y
+
+    for ix in range(t):
+        v = x[ix]
+        if v == nodata or np.isnan(v):
+            continue
+        f = glo_cdf(float(v), xi, alpha, k)
+        if 0 < f < 1:
+            y[ix] = sc.ndtri(f)
+
+    return y
+
+
+@lazycompile(
+    guvectorize(
+        [
+            "(float32[:], float64, int64, int64, int16[:])",
+            "(float64[:], float64, int64, int64, int16[:])",
+            "(int16[:], float64, int64, int64, int16[:])",
+        ],
+        "(n),(),(),() -> (n)",
+    )
+)
+def glostd_gu(xx, nodata, cal_start, cal_stop, yy):
+    """Calculate `glostd` along the last axis, scaled by 1000 and cast to int16."""
+    res = glostd(xx, nodata, cal_start, cal_stop)
+    for ix in range(xx.size):
+        yy[ix] = nodata if res[ix] == nodata else round(res[ix] * 1000)
+
+
+@lazycompile(
+    guvectorize(
+        [
+            "(float32[:], int16[:], int64, float64, int16[:, :], int16[:])",
+            "(float64[:], int16[:], int64, float64, int16[:, :], int16[:])",
+            "(int16[:], int16[:], int64, float64, int16[:, :], int16[:])",
+        ],
+        "(n),(m),(),(),(o, p) -> (n)",
+    )
+)
+def glostd_grp(xx, groups, num_groups, nodata, cal_indices, yy):
+    """Calculate `glostd` for each group, scaled by 1000 and cast to int16.
+
+    `groups` need to be in ascending order from 0 to `num_groups - 1`. `cal_indices`
+    has shape `(num_groups, 2)` with the calibration start and stop index per group,
+    relative to the group's own values.
+    """
+    for grp in range(num_groups):
+        grp_ix = np.where(groups == grp)[0]
+        res = glostd(xx[grp_ix], nodata, cal_indices[grp, 0], cal_indices[grp, 1])
+        for jj in range(grp_ix.size):
+            yy[grp_ix[jj]] = nodata if res[jj] == nodata else round(res[jj] * 1000)
+
+
+@njit
 def mk_score(x):
     """Calculate MK score (S) and Kendall's Tau.
 
@@ -558,7 +696,7 @@ def rolling_sum(xx, window_size, nodata, yy):
         for jj in range(ii - window_size + 1, ii + 1):
             if xx[jj] == nodata:
                 yy[ii] = nodata
-                continue
+                break
             yy[ii] += xx[jj]
 
 
